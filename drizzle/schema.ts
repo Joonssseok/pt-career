@@ -1,0 +1,151 @@
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, decimal, json } from "drizzle-orm/mysql-core";
+
+/**
+ * Core user table backing auth flow.
+ */
+export const users = mysqlTable("users", {
+  id: int("id").autoincrement().primaryKey(),
+  openId: varchar("openId", { length: 64 }).notNull().unique(),
+  name: text("name"),
+  email: varchar("email", { length: 320 }),
+  loginMethod: varchar("loginMethod", { length: 64 }),
+  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
+});
+
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
+
+/**
+ * Expert profiles - main profile table for professionals
+ */
+export const profiles = mysqlTable("profiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  displayName: varchar("displayName", { length: 100 }).notNull(),
+  profession: varchar("profession", { length: 50 }).notNull(),
+  headline: varchar("headline", { length: 200 }),
+  introduction: text("introduction"),
+  profileImageUrl: text("profileImageUrl"),
+  totalExperienceYears: int("totalExperienceYears").default(0),
+  isPublic: boolean("isPublic").default(false).notNull(),
+  verificationStatus: mysqlEnum("verificationStatus", ["unverified", "pending", "verified", "rejected"]).default("unverified").notNull(),
+  // Workplace info
+  centerName: varchar("centerName", { length: 200 }),
+  centerAddress: text("centerAddress"),
+  centerPhone: varchar("centerPhone", { length: 30 }),
+  centerWebsite: text("centerWebsite"),
+  latitude: decimal("latitude", { precision: 10, scale: 7 }),
+  longitude: decimal("longitude", { precision: 10, scale: 7 }),
+  region: varchar("region", { length: 50 }),
+  // Contact & social
+  contactEmail: varchar("contactEmail", { length: 320 }),
+  contactPhone: varchar("contactPhone", { length: 30 }),
+  snsLinks: json("snsLinks"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Profile = typeof profiles.$inferSelect;
+export type InsertProfile = typeof profiles.$inferInsert;
+
+/**
+ * Licenses and certifications
+ */
+export const licenses = mysqlTable("licenses", {
+  id: int("id").autoincrement().primaryKey(),
+  profileId: int("profileId").notNull(),
+  licenseName: varchar("licenseName", { length: 200 }).notNull(),
+  issuingOrganization: varchar("issuingOrganization", { length: 200 }),
+  licenseNumber: varchar("licenseNumber", { length: 100 }),
+  acquiredDate: varchar("acquiredDate", { length: 20 }),
+  expiryDate: varchar("expiryDate", { length: 20 }),
+  verificationStatus: mysqlEnum("verificationStatus", ["unverified", "pending", "verified", "rejected"]).default("unverified").notNull(),
+  evidenceFileUrl: text("evidenceFileUrl"),
+  isPublic: boolean("isPublic").default(true).notNull(),
+  adminNote: text("adminNote"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type License = typeof licenses.$inferSelect;
+export type InsertLicense = typeof licenses.$inferInsert;
+
+/**
+ * Work experiences
+ */
+export const experiences = mysqlTable("experiences", {
+  id: int("id").autoincrement().primaryKey(),
+  profileId: int("profileId").notNull(),
+  organizationName: varchar("organizationName", { length: 200 }).notNull(),
+  position: varchar("position", { length: 100 }),
+  startDate: varchar("startDate", { length: 20 }),
+  endDate: varchar("endDate", { length: 20 }),
+  isCurrent: boolean("isCurrent").default(false),
+  description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Experience = typeof experiences.$inferSelect;
+export type InsertExperience = typeof experiences.$inferInsert;
+
+/**
+ * Education history
+ */
+export const educations = mysqlTable("educations", {
+  id: int("id").autoincrement().primaryKey(),
+  profileId: int("profileId").notNull(),
+  educationName: varchar("educationName", { length: 200 }).notNull(),
+  organizationName: varchar("organizationName", { length: 200 }),
+  completionDate: varchar("completionDate", { length: 20 }),
+  description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Education = typeof educations.$inferSelect;
+export type InsertEducation = typeof educations.$inferInsert;
+
+/**
+ * Specialties master table
+ */
+export const specialties = mysqlTable("specialties", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  category: varchar("category", { length: 50 }),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Specialty = typeof specialties.$inferSelect;
+export type InsertSpecialty = typeof specialties.$inferInsert;
+
+/**
+ * Profile-Specialty junction table (N:M)
+ */
+export const profileSpecialties = mysqlTable("profileSpecialties", {
+  id: int("id").autoincrement().primaryKey(),
+  profileId: int("profileId").notNull(),
+  specialtyId: int("specialtyId").notNull(),
+});
+
+export type ProfileSpecialty = typeof profileSpecialties.$inferSelect;
+
+/**
+ * Reports (flagging inappropriate content)
+ */
+export const reports = mysqlTable("reports", {
+  id: int("id").autoincrement().primaryKey(),
+  reporterUserId: int("reporterUserId"),
+  targetProfileId: int("targetProfileId").notNull(),
+  reason: varchar("reason", { length: 50 }).notNull(),
+  description: text("description"),
+  status: mysqlEnum("status", ["pending", "reviewed", "resolved", "dismissed"]).default("pending").notNull(),
+  adminNote: text("adminNote"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Report = typeof reports.$inferSelect;
+export type InsertReport = typeof reports.$inferInsert;
