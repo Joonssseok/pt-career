@@ -174,8 +174,14 @@ export default function ExpertDetail() {
                 {/* Specialties */}
                 {expert.specialties && expert.specialties.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-4">
-                    {expert.specialties.map(s => (
-                      <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>
+                    {expert.specialties.map((s: { specialtyId: number; isPrimary: boolean; name: string; category: string }) => (
+                      <Badge
+                        key={s.specialtyId}
+                        variant={s.isPrimary ? "default" : "secondary"}
+                        className="text-xs"
+                      >
+                        {s.isPrimary ? s.category : s.name}
+                      </Badge>
                     ))}
                   </div>
                 )}

@@ -30,7 +30,8 @@ export const appRouter = router({
       .input(z.object({
         query: z.string().optional(),
         profession: z.string().optional(),
-        specialty: z.string().optional(),
+        category: z.string().optional(),
+        specialtyIds: z.array(z.number()).optional(),
         region: z.string().optional(),
         sortBy: z.string().optional(),
       }).optional())
@@ -57,6 +58,11 @@ export const appRouter = router({
     list: publicProcedure.query(async () => {
       return db.getAllSpecialties();
     }),
+    byCategory: publicProcedure
+      .input(z.object({ category: z.string() }))
+      .query(async ({ input }) => {
+        return db.getSpecialtiesByCategory(input.category);
+      }),
   }),
 
   // ============ MY PROFILE (PROTECTED) ============
@@ -65,8 +71,8 @@ export const appRouter = router({
       const profile = await db.getProfileByUserId(ctx.user.id);
       if (!profile) return null;
       const details = await db.getProfileWithDetails(profile.id);
-      const specialtyIds = await db.getProfileSpecialtyIds(profile.id);
-      return { ...details, specialtyIds };
+      const mySpecialties = await db.getProfileSpecialties(profile.id);
+      return { ...details, mySpecialties };
     }),
 
     create: protectedProcedure
@@ -87,17 +93,21 @@ export const appRouter = router({
         region: z.string().max(50).optional(),
         contactEmail: z.string().max(320).optional(),
         contactPhone: z.string().max(30).optional(),
-        specialtyIds: z.array(z.number()).optional(),
+        specialtyItems: z.array(z.object({
+          specialtyId: z.number(),
+          isPrimary: z.boolean(),
+          displayOrder: z.number(),
+        })).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const existing = await db.getProfileByUserId(ctx.user.id);
         if (existing) {
           throw new TRPCError({ code: "CONFLICT", message: "이미 프로필이 존재합니다" });
         }
-        const { specialtyIds, ...profileData } = input;
+        const { specialtyItems, ...profileData } = input;
         const profileId = await db.createProfile({ ...profileData, userId: ctx.user.id });
-        if (specialtyIds && specialtyIds.length > 0) {
-          await db.setProfileSpecialties(profileId, specialtyIds);
+        if (specialtyItems && specialtyItems.length > 0) {
+          await db.setProfileSpecialties(profileId, specialtyItems);
         }
         return { id: profileId };
       }),
@@ -120,17 +130,21 @@ export const appRouter = router({
         region: z.string().max(50).optional(),
         contactEmail: z.string().max(320).optional(),
         contactPhone: z.string().max(30).optional(),
-        specialtyIds: z.array(z.number()).optional(),
+        specialtyItems: z.array(z.object({
+          specialtyId: z.number(),
+          isPrimary: z.boolean(),
+          displayOrder: z.number(),
+        })).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const profile = await db.getProfileByUserId(ctx.user.id);
         if (!profile) {
           throw new TRPCError({ code: "NOT_FOUND", message: "프로필이 존재하지 않습니다" });
         }
-        const { specialtyIds, ...profileData } = input;
+        const { specialtyItems, ...profileData } = input;
         await db.updateProfile(profile.id, profileData);
-        if (specialtyIds !== undefined) {
-          await db.setProfileSpecialties(profile.id, specialtyIds);
+        if (specialtyItems !== undefined) {
+          await db.setProfileSpecialties(profile.id, specialtyItems);
         }
         return { success: true };
       }),

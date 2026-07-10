@@ -109,11 +109,17 @@ export type InsertEducation = typeof educations.$inferInsert;
 
 /**
  * Specialties master table
+ * category: 1차 카테고리 (12개)
+ * name: 세부 태그 이름
+ * description: 간단한 설명
+ * displayOrder: 정렬 순서
  */
 export const specialties = mysqlTable("specialties", {
   id: int("id").autoincrement().primaryKey(),
-  name: varchar("name", { length: 100 }).notNull().unique(),
-  category: varchar("category", { length: 50 }),
+  name: varchar("name", { length: 100 }).notNull(),
+  category: varchar("category", { length: 50 }).notNull(),
+  description: text("description"),
+  displayOrder: int("displayOrder").default(0).notNull(),
   isActive: boolean("isActive").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
@@ -123,11 +129,15 @@ export type InsertSpecialty = typeof specialties.$inferInsert;
 
 /**
  * Profile-Specialty junction table (N:M)
+ * isPrimary: 대표 전문분야 여부
+ * displayOrder: 프로필 내 표시 순서
  */
 export const profileSpecialties = mysqlTable("profileSpecialties", {
   id: int("id").autoincrement().primaryKey(),
   profileId: int("profileId").notNull(),
   specialtyId: int("specialtyId").notNull(),
+  isPrimary: boolean("isPrimary").default(false).notNull(),
+  displayOrder: int("displayOrder").default(0).notNull(),
 });
 
 export type ProfileSpecialty = typeof profileSpecialties.$inferSelect;

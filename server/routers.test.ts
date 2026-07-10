@@ -144,10 +144,15 @@ describe("myProfile.get", () => {
     const result = await caller.myProfile.get();
     // User 1 has a profile in seed data
     if (result) {
-      // myProfile.get returns { ...details, specialtyIds } where details is flat
+      // myProfile.get returns { ...details, mySpecialties } where details is flat
       expect(result.displayName).toBeDefined();
-      expect(result.specialtyIds).toBeDefined();
-      expect(Array.isArray(result.specialtyIds)).toBe(true);
+      expect(result.mySpecialties).toBeDefined();
+      expect(Array.isArray(result.mySpecialties)).toBe(true);
+      if (result.mySpecialties.length > 0) {
+        const first = result.mySpecialties[0];
+        expect(first.specialtyId).toBeDefined();
+        expect(typeof first.isPrimary).toBe("boolean");
+      }
     }
   });
 });

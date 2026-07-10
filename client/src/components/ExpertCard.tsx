@@ -2,6 +2,13 @@ import { Link } from "wouter";
 import { MapPin, Briefcase, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
+export interface ExpertSpecialty {
+  specialtyId: number;
+  isPrimary: boolean;
+  name: string;
+  category: string;
+}
+
 export interface ExpertCardData {
   id: number;
   displayName: string;
@@ -12,7 +19,7 @@ export interface ExpertCardData {
   region: string | null;
   centerName: string | null;
   verificationStatus: string;
-  specialties?: string[];
+  specialties?: ExpertSpecialty[];
 }
 
 interface ExpertCardProps {
@@ -21,6 +28,9 @@ interface ExpertCardProps {
 
 export default function ExpertCard({ expert }: ExpertCardProps) {
   const specialties = expert.specialties || [];
+  const primary = specialties.find((s) => s.isPrimary);
+  // Sub tags: exclude the primary tag itself, show up to 3
+  const subTags = specialties.filter((s) => !s.isPrimary).slice(0, 3);
 
   return (
     <Link href={`/experts/${expert.id}`}>
@@ -44,7 +54,15 @@ export default function ExpertCard({ expert }: ExpertCardProps) {
             <div className="absolute top-3 right-3">
               <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-teal/90 text-white">
                 <Shield className="w-3 h-3" />
-                확인 완료
+                자격 확인
+              </span>
+            </div>
+          )}
+          {/* Primary specialty category badge */}
+          {primary && (
+            <div className="absolute bottom-3 left-3">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-primary/90 text-primary-foreground">
+                {primary.category}
               </span>
             </div>
           )}
@@ -86,19 +104,14 @@ export default function ExpertCard({ expert }: ExpertCardProps) {
             )}
           </div>
 
-          {/* Specialties */}
-          {specialties.length > 0 && (
+          {/* Sub tags */}
+          {subTags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-3">
-              {specialties.slice(0, 3).map((s) => (
-                <span key={s} className="px-2 py-0.5 rounded-md bg-secondary text-xs text-secondary-foreground">
-                  {s}
+              {subTags.map((s) => (
+                <span key={s.specialtyId} className="px-2 py-0.5 rounded-md bg-secondary text-xs text-secondary-foreground">
+                  {s.name}
                 </span>
               ))}
-              {specialties.length > 3 && (
-                <span className="px-2 py-0.5 rounded-md bg-secondary text-xs text-muted-foreground">
-                  +{specialties.length - 3}
-                </span>
-              )}
             </div>
           )}
         </div>
