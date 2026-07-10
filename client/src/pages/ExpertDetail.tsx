@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useParams, Link } from "wouter";
 import { ArrowLeft, MapPin, Phone, Globe, ExternalLink, Shield, Briefcase, GraduationCap, Award, Calendar, Share2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,47 @@ export default function ExpertDetail() {
     { id: profileId },
     { enabled: profileId > 0 }
   );
+
+  useEffect(() => {
+    if (expert) {
+      const title = `${expert.displayName} - ${expert.profession} | PT Career`;
+      const description = expert.headline || expert.introduction?.substring(0, 160) || "경력과 자격으로 검증된 전문가";
+      const image = expert.profileImageUrl || "https://ptcareer-g7uun8nt.manus.space/manus-storage/pt-career-logo_d0877007.png";
+
+      document.title = title;
+
+      const updateOrCreateMetaTag = (property: string, content: string) => {
+        let meta = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement;
+        if (!meta) {
+          meta = document.createElement("meta");
+          meta.setAttribute("property", property);
+          document.head.appendChild(meta);
+        }
+        meta.content = content;
+      };
+
+      const updateOrCreateNameMetaTag = (name: string, content: string) => {
+        let meta = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement;
+        if (!meta) {
+          meta = document.createElement("meta");
+          meta.setAttribute("name", name);
+          document.head.appendChild(meta);
+        }
+        meta.content = content;
+      };
+
+      updateOrCreateMetaTag("og:title", title);
+      updateOrCreateMetaTag("og:description", description);
+      updateOrCreateMetaTag("og:image", image);
+      updateOrCreateMetaTag("og:type", "profile");
+      updateOrCreateMetaTag("og:url", window.location.href);
+
+      updateOrCreateNameMetaTag("twitter:title", title);
+      updateOrCreateNameMetaTag("twitter:description", description);
+      updateOrCreateNameMetaTag("twitter:image", image);
+      updateOrCreateNameMetaTag("twitter:card", "summary_large_image");
+    }
+  }, [expert]);
 
   if (isLoading) {
     return (
