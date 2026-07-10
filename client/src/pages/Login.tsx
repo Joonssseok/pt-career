@@ -1,30 +1,27 @@
-import { useState } from "react";
-import { Link } from "wouter";
-import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { useEffect } from "react";
+import { Link, useLocation } from "wouter";
+import { LogIn, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { startLogin } from "@/const";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const { isAuthenticated, loading } = useAuth();
+  const [, setLocation] = useLocation();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) {
-      toast.error("이메일과 비밀번호를 입력해주세요");
-      return;
+  useEffect(() => {
+    if (isAuthenticated) {
+      setLocation("/mypage");
     }
-    setLoading(true);
-    // Simulate login
-    setTimeout(() => {
-      setLoading(false);
-      toast.info("로그인 기능은 백엔드 연동 후 사용 가능합니다");
-    }, 1000);
-  };
+  }, [isAuthenticated, setLocation]);
+
+  if (loading) {
+    return (
+      <div className="pt-24 pb-20 min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      </div>
+    );
+  }
 
   return (
     <div className="pt-24 pb-20 min-h-screen flex items-center justify-center">
@@ -43,66 +40,22 @@ export default function Login() {
             </p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">이메일</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="example@email.com"
-                  className="pl-9"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-            </div>
+          {/* OAuth Login Button */}
+          <Button
+            className="w-full btn-press h-12 text-base"
+            onClick={() => startLogin()}
+          >
+            <LogIn className="w-5 h-5 mr-2" />
+            로그인 / 회원가입
+          </Button>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">비밀번호</Label>
-                <Link href="/reset-password" className="text-xs text-accent hover:underline">
-                  비밀번호 찾기
-                </Link>
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="비밀번호 입력"
-                  className="pl-9 pr-10"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4 text-muted-foreground" />
-                  ) : (
-                    <Eye className="w-4 h-4 text-muted-foreground" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <Button type="submit" className="w-full btn-press" disabled={loading}>
-              {loading ? "로그인 중..." : "로그인"}
-            </Button>
-          </form>
-
-          {/* Footer */}
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            아직 계정이 없으신가요?{" "}
-            <Link href="/signup" className="text-accent hover:underline font-medium">
-              회원가입
-            </Link>
-          </div>
+          <p className="text-xs text-muted-foreground text-center mt-4">
+            로그인 시{" "}
+            <Link href="/terms" className="text-accent hover:underline">이용약관</Link>
+            {" "}및{" "}
+            <Link href="/privacy" className="text-accent hover:underline">개인정보처리방침</Link>
+            에 동의하는 것으로 간주합니다.
+          </p>
         </div>
       </div>
     </div>

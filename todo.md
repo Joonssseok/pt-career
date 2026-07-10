@@ -1,0 +1,26 @@
+# Project TODO
+
+- [x] Project initialization and scaffold
+- [x] Full-stack upgrade (db, server, user)
+- [x] Database schema (users, profiles, licenses, experiences, educations, specialties, profileSpecialties, reports)
+- [x] Backend API (tRPC routers for profiles, specialties, myProfile, admin)
+- [x] Seed data (6 expert profiles with licenses, experiences, educations, specialties)
+- [x] Common layout with responsive header, footer, mobile bottom nav
+- [x] Home page with hero, search, specialties, featured experts
+- [x] Expert listing page with filters (profession, region, specialty) and search
+- [x] Expert detail page with full profile info (licenses, experiences, educations, specialties)
+- [x] Map page (Google Maps integration via proxy, tRPC data)
+- [x] Login/Signup pages (Manus OAuth)
+- [x] My Page (profile overview, licenses, experiences, educations)
+- [x] Profile create/edit form (basic info, specialties, workplace, contact, visibility)
+- [x] Admin page (dashboard stats, license verification, profile management, report management)
+- [x] Auth-aware navigation (login vs mypage/admin)
+- [x] About page
+- [x] Terms page
+- [x] Privacy page
+- [x] 404 Not Found page
+- [x] Mobile responsive design (bottom nav, mobile menu)
+- [x] Vitest tests (16 tests passing - auth, profiles, specialties, myProfile, admin)
+- [x] Dark/light theme toggle
+- [ ] Map page: Google Maps loads in production only (proxy requires Origin header from deployed domain)
+- [ ] Admin page: shows loading spinner in preview (requires admin role - works when logged in as admin)

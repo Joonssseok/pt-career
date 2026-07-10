@@ -1,7 +1,9 @@
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
-import { Menu, X, MapPin, Users, UserPlus, LogIn } from "lucide-react";
+import { Menu, X, MapPin, Users, UserPlus, LogIn, User, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { startLogin } from "@/const";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,6 +13,7 @@ export default function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { user, isAuthenticated } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -72,16 +75,37 @@ export default function Layout({ children }: LayoutProps) {
                 </span>
               </Link>
             ))}
-            <Link href="/login">
+            {isAuthenticated ? (
+              <div className="flex items-center gap-2 ml-2">
+                {user?.role === "admin" && (
+                  <Link href="/admin">
+                    <Button variant="ghost" size="sm" className={scrolled || !isHome ? "" : "text-white hover:bg-white/10"}>
+                      <Shield className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                )}
+                <Link href="/mypage">
+                  <Button
+                    variant={scrolled || !isHome ? "default" : "secondary"}
+                    size="sm"
+                    className="btn-press"
+                  >
+                    <User className="w-4 h-4 mr-1.5" />
+                    마이페이지
+                  </Button>
+                </Link>
+              </div>
+            ) : (
               <Button
                 variant={scrolled || !isHome ? "default" : "secondary"}
                 size="sm"
                 className="ml-2 btn-press"
+                onClick={() => startLogin()}
               >
                 <LogIn className="w-4 h-4 mr-1.5" />
                 로그인
               </Button>
-            </Link>
+            )}
           </nav>
 
           {/* Mobile Menu Toggle */}
@@ -113,12 +137,31 @@ export default function Layout({ children }: LayoutProps) {
                   </span>
                 </Link>
               ))}
-              <Link href="/login">
-                <span className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-foreground/70 hover:bg-muted">
-                  <LogIn className="w-5 h-5" />
-                  로그인
-                </span>
-              </Link>
+              {isAuthenticated ? (
+                <>
+                  <Link href="/mypage">
+                    <span className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-foreground/70 hover:bg-muted">
+                      <User className="w-5 h-5" />
+                      마이페이지
+                    </span>
+                  </Link>
+                  {user?.role === "admin" && (
+                    <Link href="/admin">
+                      <span className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-foreground/70 hover:bg-muted">
+                        <Shield className="w-5 h-5" />
+                        관리자
+                      </span>
+                    </Link>
+                  )}
+                </>
+              ) : (
+                <button onClick={() => startLogin()}>
+                  <span className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-foreground/70 hover:bg-muted">
+                    <LogIn className="w-5 h-5" />
+                    로그인
+                  </span>
+                </button>
+              )}
             </nav>
           </div>
         )}
@@ -201,12 +244,21 @@ export default function Layout({ children }: LayoutProps) {
               전문가
             </span>
           </Link>
-          <Link href="/login">
-            <span className={`flex flex-col items-center gap-0.5 text-xs ${location === "/login" ? "text-accent" : "text-muted-foreground"}`}>
-              <LogIn className="w-5 h-5" />
-              로그인
-            </span>
-          </Link>
+          {isAuthenticated ? (
+            <Link href="/mypage">
+              <span className={`flex flex-col items-center gap-0.5 text-xs ${location.startsWith("/mypage") ? "text-accent" : "text-muted-foreground"}`}>
+                <User className="w-5 h-5" />
+                MY
+              </span>
+            </Link>
+          ) : (
+            <button onClick={() => startLogin()}>
+              <span className="flex flex-col items-center gap-0.5 text-xs text-muted-foreground">
+                <LogIn className="w-5 h-5" />
+                로그인
+              </span>
+            </button>
+          )}
         </div>
       </nav>
     </div>

@@ -1,30 +1,63 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Link } from "wouter";
-import { List, MapIcon, X } from "lucide-react";
+import { List, MapIcon, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MapView } from "@/components/Map";
-import { mockExperts } from "@/lib/mockData";
-import ExpertCard from "@/components/ExpertCard";
+import { trpc } from "@/lib/trpc";
 import { Badge } from "@/components/ui/badge";
 import { Shield, MapPin, Briefcase } from "lucide-react";
 
-export default function MapPage() {
-  const [selectedExpert, setSelectedExpert] = useState<typeof mockExperts[0] | null>(null);
-  const [showList, setShowList] = useState(false);
+type ProfileData = {
+  id: number;
+  displayName: string;
+  profession: string;
+  profileImageUrl: string | null;
+  totalExperienceYears: number | null;
+  verificationStatus: string;
+  centerName: string | null;
+  centerAddress: string | null;
+  latitude: string | null;
+  longitude: string | null;
+  region: string | null;
+};
 
-  const experts = mockExperts.filter(e => e.isPublic);
+export default function MapPage() {
+  const [selectedExpert, setSelectedExpert] = useState<ProfileData | null>(null);
+  const [showList, setShowList] = useState(false);
+  const markersRef = useRef<google.maps.Marker[]>([]);
+  const mapRef = useRef<google.maps.Map | null>(null);
+
+  const { data: experts = [], isLoading } = trpc.profiles.list.useQuery({});
+
+  // Filter experts that have lat/lng
+  const mappableExperts = experts.filter(
+    (e: any) => e.latitude && e.longitude
+  ) as ProfileData[];
 
   const handleMapReady = useCallback((map: google.maps.Map) => {
+    mapRef.current = map;
     // Center on Seoul
     map.setCenter({ lat: 37.5065, lng: 127.0536 });
     map.setZoom(12);
+  }, []);
 
-    // Add markers for each expert
-    experts.forEach((expert) => {
+  // Add markers when experts data loads
+  const addMarkers = useCallback(() => {
+    if (!mapRef.current || mappableExperts.length === 0) return;
+
+    // Clear existing markers
+    markersRef.current.forEach(m => m.setMap(null));
+    markersRef.current = [];
+
+    mappableExperts.forEach((expert) => {
+      const lat = parseFloat(expert.latitude!);
+      const lng = parseFloat(expert.longitude!);
+      if (isNaN(lat) || isNaN(lng)) return;
+
       const marker = new google.maps.Marker({
-        position: { lat: expert.workplace.latitude, lng: expert.workplace.longitude },
-        map,
-        title: expert.workplace.centerName,
+        position: { lat, lng },
+        map: mapRef.current!,
+        title: expert.centerName || expert.displayName,
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
           scale: 10,
@@ -38,8 +71,40 @@ export default function MapPage() {
       marker.addListener("click", () => {
         setSelectedExpert(expert);
       });
+
+      markersRef.current.push(marker);
     });
-  }, []);
+
+    // Fit bounds if multiple markers
+    if (markersRef.current.length > 1) {
+      const bounds = new google.maps.LatLngBounds();
+      markersRef.current.forEach(m => {
+        const pos = m.getPosition();
+        if (pos) bounds.extend(pos);
+      });
+      mapRef.current!.fitBounds(bounds, 60);
+    }
+  }, [mappableExperts]);
+
+  // Effect to add markers when map is ready and data loads
+  const handleMapReadyWithMarkers = useCallback((map: google.maps.Map) => {
+    handleMapReady(map);
+    // Delay marker addition to ensure data is ready
+    setTimeout(() => addMarkers(), 100);
+  }, [handleMapReady, addMarkers]);
+
+  // Re-add markers when experts change
+  if (mapRef.current && mappableExperts.length > 0 && markersRef.current.length === 0) {
+    addMarkers();
+  }
+
+  if (isLoading) {
+    return (
+      <div className="pt-16 h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      </div>
+    );
+  }
 
   return (
     <div className="pt-16 pb-14 md:pb-0 h-screen flex flex-col">
@@ -60,7 +125,12 @@ export default function MapPage() {
       <div className="flex-1 flex overflow-hidden">
         {/* Map */}
         <div className={`flex-1 relative ${showList ? "hidden md:block" : ""}`}>
-          <MapView onMapReady={handleMapReady} />
+          <MapView
+            className="w-full h-full"
+            initialCenter={{ lat: 37.5065, lng: 127.0536 }}
+            initialZoom={12}
+            onMapReady={handleMapReadyWithMarkers}
+          />
 
           {/* Selected Expert Card */}
           {selectedExpert && (
@@ -73,11 +143,19 @@ export default function MapPage() {
                   <X className="w-4 h-4 text-muted-foreground" />
                 </button>
                 <div className="flex gap-3">
-                  <img
-                    src={selectedExpert.profileImageUrl}
-                    alt={selectedExpert.displayName}
-                    className="w-16 h-16 rounded-lg object-cover"
-                  />
+                  {selectedExpert.profileImageUrl ? (
+                    <img
+                      src={selectedExpert.profileImageUrl}
+                      alt={selectedExpert.displayName}
+                      className="w-16 h-16 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-lg bg-secondary flex items-center justify-center">
+                      <span className="text-lg font-bold text-muted-foreground/30">
+                        {selectedExpert.displayName.charAt(0)}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <h3 className="font-semibold text-sm truncate">{selectedExpert.displayName}</h3>
@@ -88,11 +166,11 @@ export default function MapPage() {
                     <p className="text-xs text-muted-foreground">{selectedExpert.profession}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                       <MapPin className="w-3 h-3" />
-                      {selectedExpert.workplace.centerName}
+                      {selectedExpert.centerName}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
                       <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                        경력 {selectedExpert.totalExperienceYears}년
+                        경력 {selectedExpert.totalExperienceYears || 0}년
                       </Badge>
                     </div>
                   </div>
@@ -111,9 +189,9 @@ export default function MapPage() {
         <div className={`w-full md:w-96 md:border-l border-border overflow-y-auto bg-background ${!showList ? "hidden md:block" : ""}`}>
           <div className="p-4 space-y-3">
             <p className="text-sm text-muted-foreground mb-2">
-              {experts.length}명의 전문가
+              {mappableExperts.length}명의 전문가
             </p>
-            {experts.map((expert) => (
+            {mappableExperts.map((expert) => (
               <button
                 key={expert.id}
                 className="w-full text-left"
@@ -125,11 +203,19 @@ export default function MapPage() {
                     : "border-border hover:border-accent/30"
                 }`}>
                   <div className="flex gap-3">
-                    <img
-                      src={expert.profileImageUrl}
-                      alt={expert.displayName}
-                      className="w-12 h-12 rounded-lg object-cover"
-                    />
+                    {expert.profileImageUrl ? (
+                      <img
+                        src={expert.profileImageUrl}
+                        alt={expert.displayName}
+                        className="w-12 h-12 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center">
+                        <span className="text-sm font-bold text-muted-foreground/30">
+                          {expert.displayName.charAt(0)}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <h3 className="font-medium text-sm truncate">{expert.displayName}</h3>
@@ -137,10 +223,10 @@ export default function MapPage() {
                           <Shield className="w-3.5 h-3.5 text-teal shrink-0" />
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">{expert.profession} · 경력 {expert.totalExperienceYears}년</p>
+                      <p className="text-xs text-muted-foreground">{expert.profession} · 경력 {expert.totalExperienceYears || 0}년</p>
                       <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                         <Briefcase className="w-3 h-3" />
-                        {expert.workplace.centerName}
+                        {expert.centerName}
                       </p>
                     </div>
                   </div>
