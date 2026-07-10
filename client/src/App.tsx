@@ -16,6 +16,9 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import MyPage from "./pages/MyPage";
 import ProfileForm from "./pages/ProfileForm";
+import MyLicenses from "./pages/MyLicenses";
+import MyExperiences from "./pages/MyExperiences";
+import MyEducations from "./pages/MyEducations";
 import AdminPage from "./pages/AdminPage";
 
 function Router() {
@@ -33,6 +36,9 @@ function Router() {
       <Route path="/mypage" component={MyPage} />
       <Route path="/mypage/profile/create" component={ProfileForm} />
       <Route path="/mypage/profile/edit" component={ProfileForm} />
+      <Route path="/mypage/licenses" component={MyLicenses} />
+      <Route path="/mypage/experiences" component={MyExperiences} />
+      <Route path="/mypage/educations" component={MyEducations} />
       <Route path="/admin" component={AdminPage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

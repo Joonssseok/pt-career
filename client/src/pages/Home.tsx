@@ -208,7 +208,7 @@ export default function Home() {
               경력과 자격을 등록하고, 나를 찾는 고객에게 발견되세요.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/my/profile">
+              <Link href="/mypage">
                 <Button size="lg" className="bg-cyan hover:bg-cyan-light text-navy font-semibold btn-press">
                   무료로 프로필 등록하기
                 </Button>
