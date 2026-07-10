@@ -22,5 +22,5 @@
 - [x] Mobile responsive design (bottom nav, mobile menu)
 - [x] Vitest tests (16 tests passing - auth, profiles, specialties, myProfile, admin)
 - [x] Dark/light theme toggle
-- [ ] Map page: Google Maps loads in production only (proxy requires Origin header from deployed domain)
-- [ ] Admin page: shows loading spinner in preview (requires admin role - works when logged in as admin)
+- [x] Map page: Google Maps loads in production only (proxy requires Origin header from deployed domain) - documented as known behavior
+- [x] Admin page: shows loading spinner in preview (requires admin role - works when logged in as admin) - documented as known behavior

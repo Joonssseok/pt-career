@@ -28,10 +28,36 @@ export default function AdminPage() {
     }
   }, [authLoading, isAuthenticated, user, setLocation]);
 
-  if (authLoading || !isAuthenticated || user?.role !== "admin") {
+  if (authLoading) {
     return (
       <div className="pt-24 pb-20 min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="pt-24 pb-20 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-foreground mb-2">로그인이 필요합니다</h2>
+          <p className="text-muted-foreground mb-4">관리자 페이지에 접근하려면 로그인해주세요</p>
+          <Button onClick={() => startLogin()} className="btn-press">로그인</Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (user?.role !== "admin") {
+    return (
+      <div className="pt-24 pb-20 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="w-12 h-12 text-destructive/50 mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-foreground mb-2">접근 권한이 없습니다</h2>
+          <p className="text-muted-foreground mb-4">이 페이지는 관리자만 접근할 수 있습니다</p>
+          <Button variant="outline" onClick={() => setLocation("/")} className="btn-press">홈으로 돌아가기</Button>
+        </div>
       </div>
     );
   }
