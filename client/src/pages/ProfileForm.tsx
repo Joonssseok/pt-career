@@ -1,5 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+import { PROFESSIONS, REGIONS } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,26 +10,6 @@ import { Link, useLocation, useRoute } from "wouter";
 import { startLogin } from "@/const";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-
-const PROFESSIONS = [
-  "물리치료사",
-  "퍼스널 트레이너",
-  "건강운동관리사",
-  "필라테스 강사",
-  "선수트레이너",
-  "작업치료사",
-  "스포츠재활전문가",
-  "요가 강사",
-  "운동처방사",
-  "기타",
-];
-
-const REGIONS = [
-  "서울 강남구", "서울 서초구", "서울 송파구", "서울 마포구", "서울 강서구",
-  "서울 영등포구", "서울 용산구", "서울 성동구", "서울 종로구", "서울 중구",
-  "경기 성남시", "경기 수원시", "경기 용인시", "경기 고양시", "경기 부천시",
-  "부산", "대구", "인천", "광주", "대전", "울산", "세종", "제주",
-];
 
 export default function ProfileForm() {
   const { isAuthenticated, loading: authLoading } = useAuth();

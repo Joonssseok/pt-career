@@ -192,7 +192,7 @@ export default function ExpertDetail() {
                 면허 및 자격
               </h2>
               <div className="space-y-3">
-                {expert.licenses.filter(l => l.isPublic).map((license) => (
+                {expert.licenses.filter((l: any) => l.isPublic).map((license: any) => (
                   <div key={license.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
                     <div>
                       <p className="font-medium text-foreground text-sm">{license.licenseName}</p>

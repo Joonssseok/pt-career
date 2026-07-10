@@ -45,7 +45,10 @@ export const appRouter = router({
         if (!profile) {
           throw new TRPCError({ code: "NOT_FOUND", message: "프로필을 찾을 수 없습니다" });
         }
-        return profile;
+        if (!profile.isPublic) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "프로필을 찾을 수 없습니다" });
+        }
+        return await db.getProfileWithDetails(input.id, { publicView: true });
       }),
   }),
 
@@ -173,15 +176,21 @@ export const appRouter = router({
         isPublic: z.boolean().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        const profile = await db.getProfileByUserId(ctx.user.id);
+        if (!profile) throw new TRPCError({ code: "NOT_FOUND", message: "프로필을 먼저 생성해주세요" });
         const { id, ...data } = input;
-        await db.updateLicense(id, data);
+        const updated = await db.updateLicenseOwned(id, profile.id, data);
+        if (!updated) throw new TRPCError({ code: "FORBIDDEN", message: "이 자격증을 수정할 권한이 없습니다" });
         return { success: true };
       }),
 
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
-        await db.deleteLicense(input.id);
+      .mutation(async ({ ctx, input }) => {
+        const profile = await db.getProfileByUserId(ctx.user.id);
+        if (!profile) throw new TRPCError({ code: "NOT_FOUND", message: "프로필을 먼저 생성해주세요" });
+        const deleted = await db.deleteLicenseOwned(input.id, profile.id);
+        if (!deleted) throw new TRPCError({ code: "FORBIDDEN", message: "이 자격증을 삭제할 권한이 없습니다" });
         return { success: true };
       }),
   }),
@@ -215,15 +224,21 @@ export const appRouter = router({
         description: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        const profile = await db.getProfileByUserId(ctx.user.id);
+        if (!profile) throw new TRPCError({ code: "NOT_FOUND", message: "프로필을 먼저 생성해주세요" });
         const { id, ...data } = input;
-        await db.updateExperience(id, data);
+        const updated = await db.updateExperienceOwned(id, profile.id, data);
+        if (!updated) throw new TRPCError({ code: "FORBIDDEN", message: "이 경력을 수정할 권한이 없습니다" });
         return { success: true };
       }),
 
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
-        await db.deleteExperience(input.id);
+      .mutation(async ({ ctx, input }) => {
+        const profile = await db.getProfileByUserId(ctx.user.id);
+        if (!profile) throw new TRPCError({ code: "NOT_FOUND", message: "프로필을 먼저 생성해주세요" });
+        const deleted = await db.deleteExperienceOwned(input.id, profile.id);
+        if (!deleted) throw new TRPCError({ code: "FORBIDDEN", message: "이 경력을 삭제할 권한이 없습니다" });
         return { success: true };
       }),
   }),
@@ -253,15 +268,21 @@ export const appRouter = router({
         description: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        const profile = await db.getProfileByUserId(ctx.user.id);
+        if (!profile) throw new TRPCError({ code: "NOT_FOUND", message: "프로필을 먼저 생성해주세요" });
         const { id, ...data } = input;
-        await db.updateEducation(id, data);
+        const updated = await db.updateEducationOwned(id, profile.id, data);
+        if (!updated) throw new TRPCError({ code: "FORBIDDEN", message: "이 교육을 수정할 권한이 없습니다" });
         return { success: true };
       }),
 
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
-        await db.deleteEducation(input.id);
+      .mutation(async ({ ctx, input }) => {
+        const profile = await db.getProfileByUserId(ctx.user.id);
+        if (!profile) throw new TRPCError({ code: "NOT_FOUND", message: "프로필을 먼저 생성해주세요" });
+        const deleted = await db.deleteEducationOwned(input.id, profile.id);
+        if (!deleted) throw new TRPCError({ code: "FORBIDDEN", message: "이 교육을 삭제할 권한이 없습니다" });
         return { success: true };
       }),
   }),

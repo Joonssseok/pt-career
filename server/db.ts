@@ -149,7 +149,7 @@ export async function getPublicProfiles(filters?: {
   return result;
 }
 
-export async function getProfileWithDetails(id: number) {
+export async function getProfileWithDetails(id: number, opts?: { publicView?: boolean }) {
   const db = await getDb();
   if (!db) return null;
 
@@ -172,9 +172,19 @@ export async function getProfileWithDetails(id: number) {
     specialtyNames = specRows.map(s => s.name);
   }
 
+  let licensesToReturn: any = profileLicenses;
+  if (opts?.publicView) {
+    licensesToReturn = profileLicenses
+      .filter(l => l.isPublic)
+      .map(l => {
+        const { licenseNumber, evidenceFileUrl, adminNote, ...filtered } = l;
+        return filtered;
+      });
+  }
+
   return {
     ...profile,
-    licenses: profileLicenses,
+    licenses: licensesToReturn,
     experiences: profileExperiences,
     educations: profileEducations,
     specialties: specialtyNames,
@@ -226,10 +236,24 @@ export async function updateLicense(id: number, data: Partial<InsertLicense>) {
   await db.update(licenses).set(data).where(eq(licenses.id, id));
 }
 
+export async function updateLicenseOwned(id: number, profileId: number, data: Partial<InsertLicense>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.update(licenses).set(data).where(and(eq(licenses.id, id), eq(licenses.profileId, profileId)));
+  return result[0].affectedRows > 0;
+}
+
 export async function deleteLicense(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(licenses).where(eq(licenses.id, id));
+}
+
+export async function deleteLicenseOwned(id: number, profileId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.delete(licenses).where(and(eq(licenses.id, id), eq(licenses.profileId, profileId)));
+  return result[0].affectedRows > 0;
 }
 
 export async function getPendingLicenses() {
@@ -262,10 +286,24 @@ export async function updateExperience(id: number, data: Partial<InsertExperienc
   await db.update(experiences).set(data).where(eq(experiences.id, id));
 }
 
+export async function updateExperienceOwned(id: number, profileId: number, data: Partial<InsertExperience>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.update(experiences).set(data).where(and(eq(experiences.id, id), eq(experiences.profileId, profileId)));
+  return result[0].affectedRows > 0;
+}
+
 export async function deleteExperience(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(experiences).where(eq(experiences.id, id));
+}
+
+export async function deleteExperienceOwned(id: number, profileId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.delete(experiences).where(and(eq(experiences.id, id), eq(experiences.profileId, profileId)));
+  return result[0].affectedRows > 0;
 }
 
 // ============ EDUCATION HELPERS ============
@@ -283,10 +321,24 @@ export async function updateEducation(id: number, data: Partial<InsertEducation>
   await db.update(educations).set(data).where(eq(educations.id, id));
 }
 
+export async function updateEducationOwned(id: number, profileId: number, data: Partial<InsertEducation>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.update(educations).set(data).where(and(eq(educations.id, id), eq(educations.profileId, profileId)));
+  return result[0].affectedRows > 0;
+}
+
 export async function deleteEducation(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(educations).where(eq(educations.id, id));
+}
+
+export async function deleteEducationOwned(id: number, profileId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.delete(educations).where(and(eq(educations.id, id), eq(educations.profileId, profileId)));
+  return result[0].affectedRows > 0;
 }
 
 // ============ SPECIALTY HELPERS ============
