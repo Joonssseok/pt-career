@@ -100,7 +100,7 @@ export async function getPublicProfiles(filters?: {
   const db = await getDb();
   if (!db) return [];
 
-  const conditions: any[] = [eq(profiles.isPublic, true)];
+  const conditions: any[] = [eq(profiles.isPublic, true), eq(profiles.verificationStatus, "verified")];
 
   if (filters?.query) {
     const q = `%${filters.query}%`;

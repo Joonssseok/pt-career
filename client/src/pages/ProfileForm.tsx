@@ -115,6 +115,14 @@ export default function ProfileForm() {
     );
   }
 
+  if (!isAuthenticated) {
+    return (
+      <div className="pt-24 pb-20 min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      </div>
+    );
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!displayName || !profession) {

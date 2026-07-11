@@ -143,7 +143,11 @@ export default function MyLicenses() {
   }
 
   if (!isAuthenticated) {
-    return null;
+    return (
+      <div className="pt-24 pb-20 min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      </div>
+    );
   }
 
   if (!profile) {

@@ -2,9 +2,10 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, User, Shield, Briefcase, GraduationCap, Award, MapPin, Edit, Plus, Eye, EyeOff, LogOut } from "lucide-react";
+import { Loader2, User, Shield, Briefcase, GraduationCap, Award, MapPin, Edit, Plus, Eye, EyeOff, LogOut, Share2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { startLogin } from "@/const";
+import { toast } from "sonner";
 import { useEffect } from "react";
 
 export default function MyPage() {
@@ -40,6 +41,13 @@ export default function MyPage() {
   const handleLogout = async () => {
     await logout();
     setLocation("/");
+  };
+
+  const handleShare = () => {
+    if (profile) {
+      navigator.clipboard.writeText(`${window.location.origin}/experts/${profile.id}`);
+      toast.success("프로필 링크가 복사되었습니다");
+    }
   };
 
   return (
@@ -223,13 +231,17 @@ export default function MyPage() {
 
             {/* View Public Profile */}
             {profile.isPublic && (
-              <div className="text-center">
+              <div className="text-center flex gap-2 justify-center">
                 <Link href={`/experts/${profile.id}`}>
                   <Button variant="outline" className="btn-press">
                     <Eye className="w-4 h-4 mr-1.5" />
                     공개 프로필 미리보기
                   </Button>
                 </Link>
+                <Button variant="outline" onClick={handleShare} className="btn-press">
+                  <Share2 className="w-4 h-4 mr-1.5" />
+                  공유
+                </Button>
               </div>
             )}
           </div>

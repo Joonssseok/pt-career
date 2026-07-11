@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
+import { toast } from "sonner";
 import App from "./App";
 import { startLogin } from "./const";
 import "./index.css";
@@ -18,7 +19,8 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 
   if (!isUnauthorized) return;
 
-  startLogin();
+  toast.info("세션이 만료되었습니다");
+  setTimeout(() => startLogin(), 1500);
 };
 
 queryClient.getQueryCache().subscribe(event => {

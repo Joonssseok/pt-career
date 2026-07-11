@@ -2,6 +2,9 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Loader2, Shield, Users, Award, AlertTriangle, CheckCircle, XCircle, Eye, EyeOff } from "lucide-react";
 import { useLocation } from "wouter";
 import { startLogin } from "@/const";
@@ -128,10 +131,30 @@ function StatCard({ label, value, icon }: { label: string; value: number; icon: 
 
 function LicensesTab() {
   const { data: licenses = [], isLoading, refetch } = trpc.admin.pendingLicenses.useQuery();
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectLicenseId, setRejectLicenseId] = useState<number | null>(null);
+  const [rejectNote, setRejectNote] = useState("");
+
   const reviewMutation = trpc.admin.reviewLicense.useMutation({
     onSuccess: () => { toast.success("처리 완료"); refetch(); },
     onError: (err) => toast.error(err.message),
   });
+
+  const handleRejectClick = (licenseId: number) => {
+    setRejectLicenseId(licenseId);
+    setRejectNote("");
+    setRejectDialogOpen(true);
+  };
+
+  const handleRejectSubmit = () => {
+    if (rejectLicenseId === null) return;
+    reviewMutation.mutate({
+      licenseId: rejectLicenseId,
+      status: "rejected",
+      adminNote: rejectNote || undefined,
+    });
+    setRejectDialogOpen(false);
+  };
 
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-accent" /></div>;
 
@@ -164,15 +187,49 @@ function LicensesTab() {
               >
                 <CheckCircle className="w-4 h-4 mr-1" /> 승인
               </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-red-600 border-red-200 hover:bg-red-50"
-                onClick={() => reviewMutation.mutate({ licenseId: lic.id, status: "rejected" })}
-                disabled={reviewMutation.isPending}
-              >
-                <XCircle className="w-4 h-4 mr-1" /> 거절
-              </Button>
+              <Dialog open={rejectDialogOpen && rejectLicenseId === lic.id} onOpenChange={(open) => { if (!open) setRejectDialogOpen(false); }}>
+                <DialogTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-red-600 border-red-200 hover:bg-red-50"
+                    onClick={() => handleRejectClick(lic.id)}
+                    disabled={reviewMutation.isPending}
+                  >
+                    <XCircle className="w-4 h-4 mr-1" /> 거절
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>자격 거절 사유</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="reject-note">거절 사유 (선택사항)</Label>
+                      <textarea
+                        id="reject-note"
+                        className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm resize-y"
+                        value={rejectNote}
+                        onChange={(e) => setRejectNote(e.target.value)}
+                        placeholder="거절 사유를 입력해주세요"
+                      />
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <DialogClose asChild>
+                        <Button type="button" variant="outline">취소</Button>
+                      </DialogClose>
+                      <Button
+                        onClick={handleRejectSubmit}
+                        disabled={reviewMutation.isPending}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        {reviewMutation.isPending ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <XCircle className="w-4 h-4 mr-1.5" />}
+                        거절
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </div>
@@ -185,9 +242,11 @@ function ProfilesTab() {
   const { data: profiles = [], isLoading, refetch } = trpc.admin.profiles.useQuery();
   const visibilityMutation = trpc.admin.updateProfileVisibility.useMutation({
     onSuccess: () => { toast.success("변경 완료"); refetch(); },
+    onError: (err) => toast.error(err.message),
   });
   const verificationMutation = trpc.admin.updateProfileVerification.useMutation({
     onSuccess: () => { toast.success("변경 완료"); refetch(); },
+    onError: (err) => toast.error(err.message),
   });
 
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-accent" /></div>;
@@ -241,9 +300,30 @@ function ProfilesTab() {
 
 function ReportsTab() {
   const { data: reports = [], isLoading, refetch } = trpc.admin.reports.useQuery();
+  const [dismissDialogOpen, setDismissDialogOpen] = useState(false);
+  const [dismissReportId, setDismissReportId] = useState<number | null>(null);
+  const [dismissNote, setDismissNote] = useState("");
+
   const reviewMutation = trpc.admin.reviewReport.useMutation({
     onSuccess: () => { toast.success("처리 완료"); refetch(); },
+    onError: (err) => toast.error(err.message),
   });
+
+  const handleDismissClick = (reportId: number) => {
+    setDismissReportId(reportId);
+    setDismissNote("");
+    setDismissDialogOpen(true);
+  };
+
+  const handleDismissSubmit = () => {
+    if (dismissReportId === null) return;
+    reviewMutation.mutate({
+      reportId: dismissReportId,
+      status: "dismissed",
+      adminNote: dismissNote || undefined,
+    });
+    setDismissDialogOpen(false);
+  };
 
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-accent" /></div>;
 
@@ -275,17 +355,53 @@ function ReportsTab() {
                   variant="outline"
                   className="text-xs"
                   onClick={() => reviewMutation.mutate({ reportId: report.id, status: "resolved" })}
+                  disabled={reviewMutation.isPending}
                 >
                   해결
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-xs"
-                  onClick={() => reviewMutation.mutate({ reportId: report.id, status: "dismissed" })}
-                >
-                  기각
-                </Button>
+                <Dialog open={dismissDialogOpen && dismissReportId === report.id} onOpenChange={(open) => { if (!open) setDismissDialogOpen(false); }}>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-xs"
+                      onClick={() => handleDismissClick(report.id)}
+                      disabled={reviewMutation.isPending}
+                    >
+                      기각
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>신고 기각 사유</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="dismiss-note">기각 사유 (선택사항)</Label>
+                        <textarea
+                          id="dismiss-note"
+                          className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm resize-y"
+                          value={dismissNote}
+                          onChange={(e) => setDismissNote(e.target.value)}
+                          placeholder="기각 사유를 입력해주세요"
+                        />
+                      </div>
+                      <div className="flex gap-2 justify-end">
+                        <DialogClose asChild>
+                          <Button type="button" variant="outline">취소</Button>
+                        </DialogClose>
+                        <Button
+                          onClick={handleDismissSubmit}
+                          disabled={reviewMutation.isPending}
+                          variant="outline"
+                        >
+                          {reviewMutation.isPending ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : null}
+                          기각
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             )}
           </div>
