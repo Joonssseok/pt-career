@@ -4,15 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import ExpertCard from "@/components/ExpertCard";
+import NearbyExpertsModal from "@/components/NearbyExpertsModal";
 import { useState } from "react";
-import { SPECIALTY_CATEGORIES } from "@/lib/mockData";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [nearbyModalOpen, setNearbyModalOpen] = useState(false);
 
   const { data: profiles } = trpc.profiles.list.useQuery({});
+  const { data: specialtiesData } = trpc.specialties.list.useQuery();
 
   const featuredExperts = (profiles || []).filter(e => e.verificationStatus === "verified").slice(0, 3);
+  const topSpecialties = (specialtiesData || []).slice(0, 8);
 
   return (
     <div className="pb-16 md:pb-0">
@@ -59,12 +62,14 @@ export default function Home() {
 
             {/* Quick Actions */}
             <div className="flex flex-wrap gap-3 mt-6">
-              <Link href="/map">
-                <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20 btn-press">
-                  <MapPin className="w-4 h-4 mr-1.5" />
-                  내 주변 전문가 찾기
-                </Button>
-              </Link>
+              <Button
+                variant="outline"
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20 btn-press"
+                onClick={() => setNearbyModalOpen(true)}
+              >
+                <MapPin className="w-4 h-4 mr-1.5" />
+                내 주변 전문가 찾기
+              </Button>
               <Link href="/experts">
                 <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20 btn-press">
                   <Users className="w-4 h-4 mr-1.5" />
@@ -81,18 +86,18 @@ export default function Home() {
         <div className="container">
           <div className="text-center mb-10">
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-              목적별 전문가 찾기
+              전문 분야별 전문가 찾기
             </h2>
             <p className="text-muted-foreground">
-              운동 목적을 선택하면 해당 분야 전문가를 바로 확인할 수 있습니다
+              필요한 전문 분야를 선택하면 해당 분야 전문가를 바로 확인할 수 있습니다
             </p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto stagger-in">
-            {SPECIALTY_CATEGORIES.map((category) => (
-              <Link key={category} href={`/experts?category=${encodeURIComponent(category)}`}>
-                <div className="card-hover bg-card border border-border rounded-xl p-4 text-center hover:border-accent/30 transition-colors h-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-foreground">{category}</span>
+            {topSpecialties.map((specialty) => (
+              <Link key={specialty.id} href={`/experts?specialty=${specialty.name}`}>
+                <div className="card-hover bg-card border border-border rounded-xl p-4 text-center hover:border-accent/30 transition-colors">
+                  <span className="text-sm font-medium text-foreground">{specialty.name}</span>
                 </div>
               </Link>
             ))}
@@ -237,6 +242,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Nearby Experts Modal */}
+      <NearbyExpertsModal open={nearbyModalOpen} onOpenChange={setNearbyModalOpen} />
     </div>
   );
 }
