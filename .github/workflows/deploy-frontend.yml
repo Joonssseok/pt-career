@@ -36,7 +36,7 @@ jobs:
         run: pnpm install
 
       - name: Build frontend
-        run: pnpm run build
+        run: pnpm run build:frontend
         env:
           VITE_API_URL: ${{ secrets.SUPABASE_API_URL }}
           VITE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
