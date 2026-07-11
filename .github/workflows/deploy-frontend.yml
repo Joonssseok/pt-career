@@ -38,8 +38,6 @@ jobs:
       - name: Build frontend
         run: pnpm run build:frontend
         env:
-          VITE_API_URL: ${{ secrets.SUPABASE_API_URL }}
-          VITE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           VITE_BASE_URL: /pt-career/
 
       - name: Upload artifact
