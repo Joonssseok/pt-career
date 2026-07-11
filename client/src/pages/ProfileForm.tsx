@@ -8,7 +8,9 @@ import { Switch } from "@/components/ui/switch";
 import { Loader2, ArrowLeft, Save } from "lucide-react";
 import { Link, useLocation, useRoute } from "wouter";
 import { startLogin } from "@/const";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { SPECIALTY_CATEGORIES } from "@/lib/mockData";
+import { Star } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ProfileForm() {
@@ -53,7 +55,27 @@ export default function ProfileForm() {
   const [region, setRegion] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+  // Selected specialty tag IDs (multi-select) and the primary tag ID
   const [selectedSpecialties, setSelectedSpecialties] = useState<number[]>([]);
+  const [primarySpecialtyId, setPrimarySpecialtyId] = useState<number | null>(null);
+  const [openCategory, setOpenCategory] = useState<string | null>(null);
+
+  // Group specialties by category, preserving MVP category order
+  const specialtiesByCategory = useMemo(() => {
+    const map = new Map<string, { id: number; name: string; category: string }[]>();
+    for (const cat of SPECIALTY_CATEGORIES) map.set(cat, []);
+    for (const s of specialties as { id: number; name: string; category: string }[]) {
+      if (!map.has(s.category)) map.set(s.category, []);
+      map.get(s.category)!.push(s);
+    }
+    return map;
+  }, [specialties]);
+
+  const specialtyById = useMemo(() => {
+    const map = new Map<number, { id: number; name: string; category: string }>();
+    for (const s of specialties as { id: number; name: string; category: string }[]) map.set(s.id, s);
+    return map;
+  }, [specialties]);
 
   // Populate form when editing
   useEffect(() => {
@@ -72,7 +94,10 @@ export default function ProfileForm() {
       setRegion(existingProfile.region || "");
       setContactEmail(existingProfile.contactEmail || "");
       setContactPhone(existingProfile.contactPhone || "");
-      setSelectedSpecialties(existingProfile.specialtyIds || []);
+      const mySpecs = existingProfile.mySpecialties || [];
+      setSelectedSpecialties(mySpecs.map((s: { specialtyId: number }) => s.specialtyId));
+      const primary = mySpecs.find((s: { isPrimary: boolean }) => s.isPrimary);
+      setPrimarySpecialtyId(primary ? primary.specialtyId : null);
     }
   }, [isEdit, existingProfile]);
 
@@ -112,7 +137,13 @@ export default function ProfileForm() {
       region: region || undefined,
       contactEmail: contactEmail || undefined,
       contactPhone: contactPhone || undefined,
-      specialtyIds: selectedSpecialties.length > 0 ? selectedSpecialties : undefined,
+      specialtyItems: selectedSpecialties.length > 0
+        ? selectedSpecialties.map((id, idx) => ({
+            specialtyId: id,
+            isPrimary: primarySpecialtyId != null ? id === primarySpecialtyId : idx === 0,
+            displayOrder: idx,
+          }))
+        : undefined,
     };
 
     if (isEdit) {
@@ -123,9 +154,13 @@ export default function ProfileForm() {
   };
 
   const toggleSpecialty = (id: number) => {
-    setSelectedSpecialties(prev =>
-      prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
-    );
+    setSelectedSpecialties(prev => {
+      if (prev.includes(id)) {
+        if (primarySpecialtyId === id) setPrimarySpecialtyId(null);
+        return prev.filter(s => s !== id);
+      }
+      return [...prev, id];
+    });
   };
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
@@ -200,22 +235,89 @@ export default function ProfileForm() {
 
           {/* Specialties */}
           <div className="bg-card border border-border rounded-xl p-6 space-y-4">
-            <h2 className="font-bold text-foreground">전문 분야</h2>
-            <div className="flex flex-wrap gap-2">
-              {specialties.map((s: any) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                    selectedSpecialties.includes(s.id)
-                      ? "bg-accent text-accent-foreground border-accent"
-                      : "bg-background text-foreground border-border hover:border-accent/50"
-                  }`}
-                  onClick={() => toggleSpecialty(s.id)}
-                >
-                  {s.name}
-                </button>
-              ))}
+            <div>
+              <h2 className="font-bold text-foreground">전문 분야</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                카테고리를 열고 세부 분야를 선택하세요. 선택한 분야 중 하나를 대표 분야로 지정할 수 있습니다.
+              </p>
+            </div>
+
+            {/* Selected tags summary */}
+            {selectedSpecialties.length > 0 && (
+              <div className="bg-secondary/50 rounded-lg p-3">
+                <p className="text-xs text-muted-foreground mb-2">
+                  선택된 분야 ({selectedSpecialties.length}) — 별표를 눌러 대표 분야를 지정하세요
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedSpecialties.map(id => {
+                    const s = specialtyById.get(id);
+                    if (!s) return null;
+                    const isPrimary = primarySpecialtyId === id;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => setPrimarySpecialtyId(isPrimary ? null : id)}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs border transition-colors ${
+                          isPrimary
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-card text-foreground border-border hover:border-primary/40"
+                        }`}
+                      >
+                        <Star className={`w-3 h-3 ${isPrimary ? "fill-current" : ""}`} />
+                        {s.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Category accordion */}
+            <div className="space-y-2">
+              {SPECIALTY_CATEGORIES.map(cat => {
+                const tags = specialtiesByCategory.get(cat) || [];
+                if (tags.length === 0) return null;
+                const isOpen = openCategory === cat;
+                const selectedInCat = tags.filter(t => selectedSpecialties.includes(t.id)).length;
+                return (
+                  <div key={cat} className="border border-border rounded-lg overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setOpenCategory(isOpen ? null : cat)}
+                      className="w-full flex items-center justify-between px-4 py-2.5 text-sm bg-background hover:bg-secondary/50 transition-colors"
+                    >
+                      <span className="font-medium text-foreground">{cat}</span>
+                      <span className="flex items-center gap-2">
+                        {selectedInCat > 0 && (
+                          <span className="text-xs text-accent bg-accent/10 px-1.5 py-0.5 rounded-full">
+                            {selectedInCat}
+                          </span>
+                        )}
+                        <span className="text-muted-foreground text-xs">{isOpen ? "−" : "+"}</span>
+                      </span>
+                    </button>
+                    {isOpen && (
+                      <div className="px-4 py-3 bg-secondary/30 flex flex-wrap gap-1.5 border-t border-border">
+                        {tags.map(s => (
+                          <button
+                            key={s.id}
+                            type="button"
+                            className={`px-2.5 py-1 rounded-md text-xs border transition-colors ${
+                              selectedSpecialties.includes(s.id)
+                                ? "bg-accent text-accent-foreground border-accent"
+                                : "bg-card text-foreground/80 border-border hover:border-accent/50"
+                            }`}
+                            onClick={() => toggleSpecialty(s.id)}
+                          >
+                            {s.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 

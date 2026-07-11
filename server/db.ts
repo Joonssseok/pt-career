@@ -92,7 +92,8 @@ export async function getAllUsers() {
 export async function getPublicProfiles(filters?: {
   query?: string;
   profession?: string;
-  specialty?: string;
+  category?: string;
+  specialtyIds?: number[];
   region?: string;
   sortBy?: string;
 }) {
@@ -132,21 +133,69 @@ export async function getPublicProfiles(filters?: {
     .where(and(...conditions))
     .orderBy(orderClause);
 
-  // If specialty filter, join through profileSpecialties
-  if (filters?.specialty) {
-    const specialtyRow = await db.select().from(specialties).where(eq(specialties.name, filters.specialty)).limit(1);
-    if (specialtyRow.length > 0) {
-      const profileIds = await db
-        .select({ profileId: profileSpecialties.profileId })
-        .from(profileSpecialties)
-        .where(eq(profileSpecialties.specialtyId, specialtyRow[0].id));
-      const ids = profileIds.map(p => p.profileId);
-      return result.filter(p => ids.includes(p.id));
-    }
-    return [];
+  // Category filter: match profiles that have at least one specialty in this category
+  if (filters?.category) {
+    const categorySpecs = await db.select({ id: specialties.id }).from(specialties).where(eq(specialties.category, filters.category));
+    const catSpecIds = categorySpecs.map(s => s.id);
+    if (catSpecIds.length === 0) return [];
+    const profileIdRows = await db
+      .select({ profileId: profileSpecialties.profileId })
+      .from(profileSpecialties)
+      .where(inArray(profileSpecialties.specialtyId, catSpecIds));
+    const catProfileIds = new Set(profileIdRows.map(p => p.profileId));
+    result = result.filter(p => catProfileIds.has(p.id));
   }
 
-  return result;
+  // Specialty tag filter: match profiles that have ALL selected tags (narrow-down)
+  if (filters?.specialtyIds && filters.specialtyIds.length > 0) {
+    const tagRows = await db
+      .select({ profileId: profileSpecialties.profileId, specialtyId: profileSpecialties.specialtyId })
+      .from(profileSpecialties)
+      .where(inArray(profileSpecialties.specialtyId, filters.specialtyIds));
+    const tagMap = new Map<number, Set<number>>();
+    for (const row of tagRows) {
+      if (!tagMap.has(row.profileId)) tagMap.set(row.profileId, new Set());
+      tagMap.get(row.profileId)!.add(row.specialtyId);
+    }
+    result = result.filter(p => {
+      const owned = tagMap.get(p.id);
+      return owned && filters.specialtyIds!.every(id => owned.has(id));
+    });
+  }
+
+  // Attach specialty info (primary + tags) for card display
+  if (result.length > 0) {
+    const resultIds = result.map(p => p.id);
+    const specRows = await db
+      .select({
+        profileId: profileSpecialties.profileId,
+        specialtyId: profileSpecialties.specialtyId,
+        isPrimary: profileSpecialties.isPrimary,
+        displayOrder: profileSpecialties.displayOrder,
+        name: specialties.name,
+        category: specialties.category,
+      })
+      .from(profileSpecialties)
+      .innerJoin(specialties, eq(profileSpecialties.specialtyId, specialties.id))
+      .where(inArray(profileSpecialties.profileId, resultIds))
+      .orderBy(desc(profileSpecialties.isPrimary), asc(profileSpecialties.displayOrder));
+    const specsByProfile = new Map<number, { specialtyId: number; isPrimary: boolean; name: string; category: string }[]>();
+    for (const row of specRows) {
+      if (!specsByProfile.has(row.profileId)) specsByProfile.set(row.profileId, []);
+      specsByProfile.get(row.profileId)!.push({
+        specialtyId: row.specialtyId,
+        isPrimary: row.isPrimary,
+        name: row.name,
+        category: row.category,
+      });
+    }
+    return result.map(p => ({
+      ...p,
+      specialties: specsByProfile.get(p.id) || [],
+    }));
+  }
+
+  return result.map(p => ({ ...p, specialties: [] as { specialtyId: number; isPrimary: boolean; name: string; category: string }[] }));
 }
 
 export async function getProfileWithDetails(id: number, opts?: { publicView?: boolean }) {
@@ -162,14 +211,23 @@ export async function getProfileWithDetails(id: number, opts?: { publicView?: bo
     db.select().from(licenses).where(eq(licenses.profileId, id)),
     db.select().from(experiences).where(eq(experiences.profileId, id)).orderBy(desc(experiences.startDate)),
     db.select().from(educations).where(eq(educations.profileId, id)).orderBy(desc(educations.completionDate)),
-    db.select({ specialtyId: profileSpecialties.specialtyId }).from(profileSpecialties).where(eq(profileSpecialties.profileId, id)),
+    db.select({ specialtyId: profileSpecialties.specialtyId, isPrimary: profileSpecialties.isPrimary }).from(profileSpecialties).where(eq(profileSpecialties.profileId, id)).orderBy(desc(profileSpecialties.isPrimary), asc(profileSpecialties.displayOrder)),
   ]);
 
-  let specialtyNames: string[] = [];
+  let profileSpecsData: { specialtyId: number; isPrimary: boolean; name: string; category: string }[] = [];
   if (profileSpecs.length > 0) {
     const specIds = profileSpecs.map(s => s.specialtyId);
     const specRows = await db.select().from(specialties).where(inArray(specialties.id, specIds));
-    specialtyNames = specRows.map(s => s.name);
+    const specMap = new Map(specRows.map(s => [s.id, s]));
+    profileSpecsData = profileSpecs.map(ps => {
+      const spec = specMap.get(ps.specialtyId);
+      return {
+        specialtyId: ps.specialtyId,
+        isPrimary: ps.isPrimary,
+        name: spec?.name || '',
+        category: spec?.category || '',
+      };
+    });
   }
 
   let licensesToReturn: any = profileLicenses;
@@ -187,7 +245,7 @@ export async function getProfileWithDetails(id: number, opts?: { publicView?: bo
     licenses: licensesToReturn,
     experiences: profileExperiences,
     educations: profileEducations,
-    specialties: specialtyNames,
+    specialties: profileSpecsData,
   };
 }
 
@@ -346,25 +404,53 @@ export async function deleteEducationOwned(id: number, profileId: number) {
 export async function getAllSpecialties() {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(specialties).where(eq(specialties.isActive, true)).orderBy(asc(specialties.name));
+  return db.select().from(specialties).where(eq(specialties.isActive, true)).orderBy(asc(specialties.displayOrder));
 }
 
-export async function setProfileSpecialties(profileId: number, specialtyIds: number[]) {
+export async function getSpecialtiesByCategory(category: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(specialties)
+    .where(and(eq(specialties.isActive, true), eq(specialties.category, category)))
+    .orderBy(asc(specialties.displayOrder));
+}
+
+export async function getCategories() {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.selectDistinct({ category: specialties.category })
+    .from(specialties)
+    .where(eq(specialties.isActive, true))
+    .orderBy(asc(specialties.displayOrder));
+  return rows.map(r => r.category);
+}
+
+export async function setProfileSpecialties(profileId: number, items: { specialtyId: number; isPrimary: boolean; displayOrder: number }[]) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(profileSpecialties).where(eq(profileSpecialties.profileId, profileId));
-  if (specialtyIds.length > 0) {
+  if (items.length > 0) {
     await db.insert(profileSpecialties).values(
-      specialtyIds.map(specialtyId => ({ profileId, specialtyId }))
+      items.map(item => ({ profileId, specialtyId: item.specialtyId, isPrimary: item.isPrimary, displayOrder: item.displayOrder }))
     );
   }
 }
 
-export async function getProfileSpecialtyIds(profileId: number) {
+export async function getProfileSpecialties(profileId: number) {
   const db = await getDb();
   if (!db) return [];
-  const rows = await db.select().from(profileSpecialties).where(eq(profileSpecialties.profileId, profileId));
-  return rows.map(r => r.specialtyId);
+  const rows = await db.select({
+    specialtyId: profileSpecialties.specialtyId,
+    isPrimary: profileSpecialties.isPrimary,
+    displayOrder: profileSpecialties.displayOrder,
+    name: specialties.name,
+    category: specialties.category,
+  })
+    .from(profileSpecialties)
+    .innerJoin(specialties, eq(profileSpecialties.specialtyId, specialties.id))
+    .where(eq(profileSpecialties.profileId, profileId))
+    .orderBy(desc(profileSpecialties.isPrimary), asc(profileSpecialties.displayOrder));
+  return rows;
 }
 
 // ============ REPORT HELPERS ============

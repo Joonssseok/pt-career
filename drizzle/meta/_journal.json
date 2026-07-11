@@ -15,6 +15,13 @@
       "when": 1783653443774,
       "tag": "0001_messy_daredevil",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1783695790838,
+      "tag": "0002_peaceful_mad_thinker",
+      "breakpoints": true
     }
   ]
 }
