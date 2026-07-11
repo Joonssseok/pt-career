@@ -29,7 +29,10 @@ export default function Experts() {
   const { data: specialtiesData } = trpc.specialties.list.useQuery();
 
   const handleRequestCurrentLocation = () => {
+    console.log("[Experts] 위치 요청 시작");
+
     if (!navigator.geolocation) {
+      console.error("[Experts] Geolocation API 미지원");
       setLocationError("브라우저가 위치 서비스를 지원하지 않습니다");
       toast.error("브라우저가 위치 서비스를 지원하지 않습니다");
       return;
@@ -37,16 +40,20 @@ export default function Experts() {
 
     setIsLocating(true);
     setLocationError(null);
+    console.log("[Experts] toast.info 시도");
     toast.info("현재 위치를 확인하고 있어요");
+    console.log("[Experts] Geolocation.getCurrentPosition 호출");
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        console.log("[Experts] 위치 획득 성공:", position.coords);
         const { latitude, longitude } = position.coords;
         setUserLocation({ lat: latitude, lng: longitude });
         setIsLocating(false);
         toast.success("현재 위치 기준으로 가까운 전문가를 보여드릴게요");
       },
       (error) => {
+        console.error("[Experts] Geolocation 에러:", error.code, error.message);
         setIsLocating(false);
         let errorMsg = "현재 위치를 확인하지 못했어요";
         if (error.code === error.PERMISSION_DENIED) {
@@ -54,6 +61,7 @@ export default function Experts() {
         } else if (error.code === error.TIMEOUT) {
           errorMsg = "위치 확인 시간이 초과되었어요";
         }
+        console.log("[Experts] 에러 메시지:", errorMsg);
         setLocationError(errorMsg);
         toast.error(errorMsg);
       },
