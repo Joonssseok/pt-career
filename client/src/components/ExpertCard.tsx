@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { MapPin, Briefcase, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { formatDistance } from "@/lib/utils/distance";
 
 export interface ExpertSpecialty {
   specialtyId: number;
@@ -20,6 +21,7 @@ export interface ExpertCardData {
   centerName: string | null;
   verificationStatus: string;
   specialties?: ExpertSpecialty[];
+  distanceKm?: number;
 }
 
 interface ExpertCardProps {
@@ -86,6 +88,15 @@ export default function ExpertCard({ expert }: ExpertCardProps) {
             <p className="text-sm text-foreground/80 line-clamp-1 mb-3">
               {expert.headline}
             </p>
+          )}
+
+          {/* Distance Badge */}
+          {expert.distanceKm !== undefined && (
+            <div className="mb-3">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-accent/10 text-accent">
+                {formatDistance(expert.distanceKm)} 거리
+              </span>
+            </div>
           )}
 
           {/* Meta */}

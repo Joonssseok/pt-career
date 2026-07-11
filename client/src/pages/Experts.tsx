@@ -1,12 +1,15 @@
 import { useState, useMemo } from "react";
 import { useSearch } from "wouter";
-import { Search, SlidersHorizontal, X, Loader2 } from "lucide-react";
+import { Search, SlidersHorizontal, X, Loader2, MapPinIcon, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import ExpertCard from "@/components/ExpertCard";
 import { PROFESSIONS, REGIONS, SPECIALTY_CATEGORIES } from "@/lib/mockData";
+import { toast } from "sonner";
+import { calculateDistanceKm, formatDistance, isValidCoordinate } from "@/lib/utils/distance";
+import type { UserLocation } from "@/types/location";
 
 export default function Experts() {
   const searchString = useSearch();
@@ -19,8 +22,44 @@ export default function Experts() {
   const [region, setRegion] = useState(params.get("region") || "all");
   const [sortBy, setSortBy] = useState("recent");
   const [showFilters, setShowFilters] = useState(false);
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   const { data: specialtiesData } = trpc.specialties.list.useQuery();
+
+  const handleRequestCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError("브라우저가 위치 서비스를 지원하지 않습니다");
+      toast.error("브라우저가 위치 서비스를 지원하지 않습니다");
+      return;
+    }
+
+    setIsLocating(true);
+    setLocationError(null);
+    toast.info("현재 위치를 확인하고 있어요");
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setUserLocation({ lat: latitude, lng: longitude });
+        setIsLocating(false);
+        toast.success("현재 위치 기준으로 가까운 전문가를 보여드릴게요");
+      },
+      (error) => {
+        setIsLocating(false);
+        let errorMsg = "현재 위치를 확인하지 못했어요";
+        if (error.code === error.PERMISSION_DENIED) {
+          errorMsg = "위치 권한이 허용되지 않았어요. 지역 검색으로 전문가를 찾아보세요";
+        } else if (error.code === error.TIMEOUT) {
+          errorMsg = "위치 확인 시간이 초과되었어요";
+        }
+        setLocationError(errorMsg);
+        toast.error(errorMsg);
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 }
+    );
+  };
 
   // Sub tags for the selected category
   const categoryTags = useMemo(() => {
@@ -38,6 +77,32 @@ export default function Experts() {
   }), [query, profession, category, selectedTagIds, region, sortBy]);
 
   const { data: profiles, isLoading } = trpc.profiles.list.useQuery(queryInput);
+
+  // Calculate distances and sort
+  const displayProfiles = useMemo(() => {
+    if (!profiles) return [];
+
+    const withDistance = profiles.map((p: any) => {
+      if (userLocation && isValidCoordinate(p.latitude, p.longitude)) {
+        const lat = parseFloat(p.latitude);
+        const lng = parseFloat(p.longitude);
+        const distance = calculateDistanceKm(userLocation.lat, userLocation.lng, lat, lng);
+        return { ...p, distanceKm: distance };
+      }
+      return p;
+    });
+
+    // Sort by distance if user location is available
+    if (userLocation) {
+      return [...withDistance].sort((a, b) => {
+        const distA = a.distanceKm ?? Infinity;
+        const distB = b.distanceKm ?? Infinity;
+        return distA - distB;
+      });
+    }
+
+    return withDistance;
+  }, [profiles, userLocation]);
 
   const hasActiveFilters = profession !== "all" || category !== "all" || region !== "all" || selectedTagIds.length > 0;
 
@@ -174,15 +239,56 @@ export default function Experts() {
           </div>
         )}
 
-        {/* Sort + Reset */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            {hasActiveFilters && (
+        {/* Location Error */}
+        {locationError && (
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg px-4 py-3 mb-6 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+            <p className="text-sm text-destructive">{locationError}</p>
+          </div>
+        )}
+
+        {/* Sort + Reset + Location Button */}
+        <div className="flex items-center justify-between mb-6 gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              size="sm"
+              variant={userLocation ? "default" : "outline"}
+              onClick={handleRequestCurrentLocation}
+              disabled={isLocating}
+              className="whitespace-nowrap"
+            >
+              {isLocating ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  위치 확인 중
+                </>
+              ) : userLocation ? (
+                <>
+                  <MapPinIcon className="w-3.5 h-3.5 mr-1.5" />
+                  위치 활성화됨
+                </>
+              ) : (
+                <>
+                  <MapPinIcon className="w-3.5 h-3.5 mr-1.5" />
+                  내 주변 찾기
+                </>
+              )}
+            </Button>
+            {(hasActiveFilters || userLocation) && (
               <>
                 <span className="text-xs text-accent bg-accent/10 px-2 py-1 rounded-full">
-                  필터 적용됨
+                  {userLocation ? "위치 기준" : ""} {hasActiveFilters ? "필터 적용됨" : ""}
                 </span>
-                <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground h-7 px-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    clearFilters();
+                    setUserLocation(null);
+                    setLocationError(null);
+                  }}
+                  className="text-muted-foreground h-7 px-2"
+                >
                   <X className="w-3.5 h-3.5 mr-1" />
                   초기화
                 </Button>
@@ -205,9 +311,9 @@ export default function Experts() {
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-accent" />
           </div>
-        ) : profiles && profiles.length > 0 ? (
+        ) : displayProfiles && displayProfiles.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 stagger-in">
-            {profiles.map((profile) => (
+            {displayProfiles.map((profile) => (
               <ExpertCard
                 key={profile.id}
                 expert={{
@@ -221,6 +327,7 @@ export default function Experts() {
                   centerName: profile.centerName,
                   verificationStatus: profile.verificationStatus,
                   specialties: profile.specialties,
+                  distanceKm: profile.distanceKm,
                 }}
               />
             ))}
