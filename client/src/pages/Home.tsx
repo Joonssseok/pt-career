@@ -24,7 +24,7 @@ export default function Home() {
         {/* Background Image */}
         <div className="absolute inset-0">
           <img
-            src="/manus-storage/hero-main_0c66565d.png"
+            src="/pt-career/manus-storage/hero-main_0c66565d.png"
             alt=""
             className="w-full h-full object-cover opacity-30"
           />

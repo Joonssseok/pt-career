@@ -37,7 +37,7 @@ export default function ExpertDetail() {
     if (expert) {
       const title = `${expert.displayName} - ${expert.profession} | PT Career`;
       const description = expert.headline || expert.introduction?.substring(0, 160) || "경력과 자격으로 검증된 전문가";
-      const image = expert.profileImageUrl || "https://ptcareer-g7uun8nt.manus.space/manus-storage/pt-career-logo_d0877007.png";
+      const image = expert.profileImageUrl || "https://ptcareer-g7uun8nt.manus.space/pt-career/manus-storage/pt-career-logo_d0877007.png";
 
       document.title = title;
 

@@ -102,7 +102,7 @@ export const mockExperts: Expert[] = [
   {
     id: "1",
     displayName: "김도현",
-    profileImageUrl: "/manus-storage/expert-card-1_bf9ae639.png",
+    profileImageUrl: "/pt-career/manus-storage/expert-card-1_bf9ae639.png",
     profession: "물리치료사",
     headline: "근골격계 전문 물리치료사 | 도수치료 10년",
     introduction: "10년간 근골격계 환자를 전문으로 치료해온 물리치료사입니다. 대학병원과 재활센터에서의 풍부한 경험을 바탕으로, 환자 개개인에 맞춘 맞춤형 치료 프로그램을 제공합니다. 특히 만성 통증 관리와 수술 후 재활에 강점을 가지고 있습니다.",
@@ -136,7 +136,7 @@ export const mockExperts: Expert[] = [
   {
     id: "2",
     displayName: "박서연",
-    profileImageUrl: "/manus-storage/expert-card-2_798ac38c.png",
+    profileImageUrl: "/pt-career/manus-storage/expert-card-2_798ac38c.png",
     profession: "퍼스널 트레이너",
     headline: "체형 교정 전문 트레이너 | NSCA-CPT",
     introduction: "체형 교정과 기능적 트레이닝을 전문으로 하는 퍼스널 트레이너입니다. 미국 NSCA 인증 자격을 보유하고 있으며, 개인별 체형 분석을 통한 맞춤 운동 프로그램을 설계합니다.",

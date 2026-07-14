@@ -30,7 +30,7 @@ export default function Login() {
           {/* Header */}
           <div className="text-center mb-8">
             <img
-              src="/manus-storage/pt-career-logo_d0877007.png"
+              src="/pt-career/manus-storage/pt-career-logo_d0877007.png"
               alt="PT Career"
               className="h-10 w-10 mx-auto mb-4"
             />

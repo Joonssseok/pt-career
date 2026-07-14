@@ -47,7 +47,7 @@ export default function Layout({ children }: LayoutProps) {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
             <img
-              src="/manus-storage/pt-career-logo_d0877007.png"
+              src="/pt-career/manus-storage/pt-career-logo_d0877007.png"
               alt="PT Career"
               className="h-8 w-8"
             />
@@ -180,7 +180,7 @@ export default function Layout({ children }: LayoutProps) {
             <div className="md:col-span-2">
               <div className="flex items-center gap-2 mb-4">
                 <img
-                  src="/manus-storage/pt-career-logo_d0877007.png"
+                  src="/pt-career/manus-storage/pt-career-logo_d0877007.png"
                   alt="PT Career"
                   className="h-7 w-7"
                 />
