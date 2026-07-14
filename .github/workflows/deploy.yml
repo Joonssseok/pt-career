@@ -1,4 +1,4 @@
-name: Deploy to Supabase + Vercel + Railway
+name: Deploy to Supabase + Vercel
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: pnpm tsx scripts/init-db.ts
 
-  deploy-frontend:
+  deploy:
     needs: init-database
     runs-on: ubuntu-latest
     if: ${{ secrets.VERCEL_TOKEN != '' }}
@@ -44,10 +44,11 @@ jobs:
 
       - run: pnpm install
 
-      - name: Build Frontend
+      - name: Build Full Stack
         env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL || 'http://localhost:3000' }}
-        run: pnpm run build:frontend
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL || '/api' }}
+        run: pnpm run build
 
       - name: Deploy to Vercel
         uses: vercel/action@main
@@ -55,40 +56,3 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-
-  deploy-backend:
-    needs: init-database
-    runs-on: ubuntu-latest
-    if: ${{ secrets.RAILWAY_TOKEN != '' }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Deploy to Railway
-        uses: railway-app/actions-deploy@v1
-        with:
-          railway-token: ${{ secrets.RAILWAY_TOKEN }}
-
-  notify-completion:
-    needs: [init-database]
-    runs-on: ubuntu-latest
-    if: always()
-    steps:
-      - name: Database Initialization Status
-        run: |
-          if [ "${{ needs.init-database.result }}" == "success" ]; then
-            echo "✅ Database initialized successfully"
-          else
-            echo "⚠️ Database initialization status: ${{ needs.init-database.result }}"
-          fi
-
-      - name: Deployment Instructions
-        run: |
-          echo "## 🚀 Deployment Status"
-          echo ""
-          echo "1. ✅ Database: Initialized"
-          echo "2. Frontend: ${{ needs.init-database.result == 'success' && '⏳ Ready for Vercel' || '❌ Failed' }}"
-          echo "3. Backend: ${{ needs.init-database.result == 'success' && '⏳ Ready for Railway' || '❌ Failed' }}"
-          echo ""
-          echo "### Next Steps (if not deployed yet):"
-          echo "- Add VERCEL_TOKEN to GitHub Secrets for frontend deployment"
-          echo "- Add RAILWAY_TOKEN to GitHub Secrets for backend deployment"

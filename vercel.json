@@ -1,9 +1,23 @@
 {
-  "buildCommand": "pnpm run build:frontend",
-  "outputDirectory": "dist",
+  "buildCommand": "pnpm install && pnpm run build",
+  "startCommand": "node dist/index.js",
+  "outputDirectory": ".",
   "env": {
+    "DATABASE_URL": {
+      "description": "Supabase PostgreSQL connection string"
+    },
     "VITE_API_URL": {
-      "description": "Backend API URL (e.g., http://localhost:3000 or https://pt-career-api.xxx.com)"
+      "description": "Backend API URL"
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }
