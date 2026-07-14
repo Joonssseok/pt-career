@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/pt-career/" />
+    <title>PT Career - 내 주변 재활·운동 전문가 찾기</title>
+    <script>
+      // GitHub Pages SPA redirect
+      // 이 스크립트는 404 상황을 사용자가 보지 않도록 즉시 처리
+      (function() {
+        var segment = /%23\//.test(window.location.href) ? '' : 0;
+        if (segment !== undefined && segment !== null && segment !== '') {
+          window.history.replaceState(null, null, window.location.pathname + '?p=' + segment + window.location.hash);
+        }
+      }());
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/pt-career/assets/index.js"></script>
+  </body>
+</html>
