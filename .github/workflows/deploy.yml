@@ -26,33 +26,5 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: pnpm tsx scripts/init-db.ts
 
-  deploy:
-    needs: init-database
-    runs-on: ubuntu-latest
-    if: ${{ secrets.VERCEL_TOKEN != '' }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 10
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "pnpm"
-
-      - run: pnpm install
-
-      - name: Build Full Stack
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          VITE_API_URL: ${{ secrets.VITE_API_URL || '/api' }}
-        run: pnpm run build
-
-      - name: Deploy to Vercel
-        uses: vercel/action@main
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+  # Vercel은 GitHub과 자동 연결되어 자동 배포되므로 이 부분 제거
+  # main 브랜치에 push하면 Vercel이 자동으로 감지하고 배포합니다
