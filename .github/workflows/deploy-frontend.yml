@@ -37,8 +37,6 @@ jobs:
 
       - name: Build frontend
         run: pnpm run build:frontend
-        env:
-          VITE_BASE_URL: /pt-career/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

@@ -22,8 +22,10 @@ import MyEducations from "./pages/MyEducations";
 import AdminPage from "./pages/AdminPage";
 
 function Router() {
+  const baseUrl = import.meta.env.BASE_URL || "/";
+
   return (
-    <Switch>
+    <Switch base={baseUrl}>
       <Route path="/" component={Home} />
       <Route path="/experts" component={Experts} />
       <Route path="/experts/:id" component={ExpertDetail} />
