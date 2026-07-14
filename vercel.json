@@ -1,0 +1,9 @@
+{
+  "buildCommand": "pnpm run build:frontend",
+  "outputDirectory": "dist",
+  "env": {
+    "VITE_API_URL": {
+      "description": "Backend API URL (e.g., http://localhost:3000 or https://pt-career-api.xxx.com)"
+    }
+  }
+}
