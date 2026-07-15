@@ -4,7 +4,7 @@ import { integer, pgEnum, pgTable, text, timestamp, varchar, boolean, decimal, j
  * Core user table backing auth flow.
  */
 export const users = pgTable("users", {
-  id: integer("id").serial(),
+  id: serial("id").primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
@@ -22,7 +22,7 @@ export type InsertUser = typeof users.$inferInsert;
  * Expert profiles - main profile table for professionals
  */
 export const profiles = pgTable("profiles", {
-  id: integer("id").serial(),
+  id: serial("id").primaryKey(),
   userId: integer("userId").notNull(),
   displayName: varchar("displayName", { length: 100 }).notNull(),
   profession: varchar("profession", { length: 50 }).notNull(),
@@ -55,7 +55,7 @@ export type InsertProfile = typeof profiles.$inferInsert;
  * Licenses and certifications
  */
 export const licenses = pgTable("licenses", {
-  id: integer("id").serial(),
+  id: serial("id").primaryKey(),
   profileId: integer("profileId").notNull(),
   licenseName: varchar("licenseName", { length: 200 }).notNull(),
   issuingOrganization: varchar("issuingOrganization", { length: 200 }),
@@ -77,7 +77,7 @@ export type InsertLicense = typeof licenses.$inferInsert;
  * Work experiences
  */
 export const experiences = pgTable("experiences", {
-  id: integer("id").serial(),
+  id: serial("id").primaryKey(),
   profileId: integer("profileId").notNull(),
   organizationName: varchar("organizationName", { length: 200 }).notNull(),
   position: varchar("position", { length: 100 }),
@@ -95,7 +95,7 @@ export type InsertExperience = typeof experiences.$inferInsert;
  * Education history
  */
 export const educations = pgTable("educations", {
-  id: integer("id").serial(),
+  id: serial("id").primaryKey(),
   profileId: integer("profileId").notNull(),
   educationName: varchar("educationName", { length: 200 }).notNull(),
   organizationName: varchar("organizationName", { length: 200 }),
@@ -115,7 +115,7 @@ export type InsertEducation = typeof educations.$inferInsert;
  * displayOrder: 정렬 순서
  */
 export const specialties = pgTable("specialties", {
-  id: integer("id").serial(),
+  id: serial("id").primaryKey(),
   name: varchar("name", { length: 100 }).notNull(),
   category: varchar("category", { length: 50 }).notNull(),
   description: text("description"),
@@ -133,7 +133,7 @@ export type InsertSpecialty = typeof specialties.$inferInsert;
  * displayOrder: 프로필 내 표시 순서
  */
 export const profileSpecialties = pgTable("profileSpecialties", {
-  id: integer("id").serial(),
+  id: serial("id").primaryKey(),
   profileId: integer("profileId").notNull(),
   specialtyId: integer("specialtyId").notNull(),
   isPrimary: boolean("isPrimary").default(false).notNull(),
@@ -146,7 +146,7 @@ export type ProfileSpecialty = typeof profileSpecialties.$inferSelect;
  * Reports (flagging inappropriate content)
  */
 export const reports = pgTable("reports", {
-  id: integer("id").serial(),
+  id: serial("id").primaryKey(),
   reporterUserId: integer("reporterUserId"),
   targetProfileId: integer("targetProfileId").notNull(),
   reason: varchar("reason", { length: 50 }).notNull(),
