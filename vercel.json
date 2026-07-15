@@ -1,10 +1,5 @@
 {
   "buildCommand": "pnpm run build:frontend",
   "outputDirectory": "dist",
-  "installCommand": "pnpm install",
-  "env": {
-    "VITE_API_URL": {
-      "description": "Backend API URL (e.g., https://pt-career-abc123.onrender.com)"
-    }
-  }
+  "installCommand": "pnpm install"
 }
