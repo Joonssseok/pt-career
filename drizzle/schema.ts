@@ -1,10 +1,10 @@
-import { int, pgEnum, pgTable, text, timestamp, varchar, boolean, decimal, json, serial } from "drizzle-orm/pg-core";
+import { integer, pgEnum, pgTable, text, timestamp, varchar, boolean, decimal, json, serial } from "drizzle-orm/pg-core";
 
 /**
  * Core user table backing auth flow.
  */
 export const users = pgTable("users", {
-  id: int("id").serial(),
+  id: integer("id").serial(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
@@ -22,14 +22,14 @@ export type InsertUser = typeof users.$inferInsert;
  * Expert profiles - main profile table for professionals
  */
 export const profiles = pgTable("profiles", {
-  id: int("id").serial(),
-  userId: int("userId").notNull(),
+  id: integer("id").serial(),
+  userId: integer("userId").notNull(),
   displayName: varchar("displayName", { length: 100 }).notNull(),
   profession: varchar("profession", { length: 50 }).notNull(),
   headline: varchar("headline", { length: 200 }),
   introduction: text("introduction"),
   profileImageUrl: text("profileImageUrl"),
-  totalExperienceYears: int("totalExperienceYears").default(0),
+  totalExperienceYears: integer("totalExperienceYears").default(0),
   isPublic: boolean("isPublic").default(false).notNull(),
   verificationStatus: pgEnum("verificationStatus", ["unverified", "pending", "verified", "rejected"]).default("unverified").notNull(),
   // Workplace info
@@ -55,8 +55,8 @@ export type InsertProfile = typeof profiles.$inferInsert;
  * Licenses and certifications
  */
 export const licenses = pgTable("licenses", {
-  id: int("id").serial(),
-  profileId: int("profileId").notNull(),
+  id: integer("id").serial(),
+  profileId: integer("profileId").notNull(),
   licenseName: varchar("licenseName", { length: 200 }).notNull(),
   issuingOrganization: varchar("issuingOrganization", { length: 200 }),
   licenseNumber: varchar("licenseNumber", { length: 100 }),
@@ -77,8 +77,8 @@ export type InsertLicense = typeof licenses.$inferInsert;
  * Work experiences
  */
 export const experiences = pgTable("experiences", {
-  id: int("id").serial(),
-  profileId: int("profileId").notNull(),
+  id: integer("id").serial(),
+  profileId: integer("profileId").notNull(),
   organizationName: varchar("organizationName", { length: 200 }).notNull(),
   position: varchar("position", { length: 100 }),
   startDate: varchar("startDate", { length: 20 }),
@@ -95,8 +95,8 @@ export type InsertExperience = typeof experiences.$inferInsert;
  * Education history
  */
 export const educations = pgTable("educations", {
-  id: int("id").serial(),
-  profileId: int("profileId").notNull(),
+  id: integer("id").serial(),
+  profileId: integer("profileId").notNull(),
   educationName: varchar("educationName", { length: 200 }).notNull(),
   organizationName: varchar("organizationName", { length: 200 }),
   completionDate: varchar("completionDate", { length: 20 }),
@@ -115,11 +115,11 @@ export type InsertEducation = typeof educations.$inferInsert;
  * displayOrder: 정렬 순서
  */
 export const specialties = pgTable("specialties", {
-  id: int("id").serial(),
+  id: integer("id").serial(),
   name: varchar("name", { length: 100 }).notNull(),
   category: varchar("category", { length: 50 }).notNull(),
   description: text("description"),
-  displayOrder: int("displayOrder").default(0).notNull(),
+  displayOrder: integer("displayOrder").default(0).notNull(),
   isActive: boolean("isActive").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
@@ -133,11 +133,11 @@ export type InsertSpecialty = typeof specialties.$inferInsert;
  * displayOrder: 프로필 내 표시 순서
  */
 export const profileSpecialties = pgTable("profileSpecialties", {
-  id: int("id").serial(),
-  profileId: int("profileId").notNull(),
-  specialtyId: int("specialtyId").notNull(),
+  id: integer("id").serial(),
+  profileId: integer("profileId").notNull(),
+  specialtyId: integer("specialtyId").notNull(),
   isPrimary: boolean("isPrimary").default(false).notNull(),
-  displayOrder: int("displayOrder").default(0).notNull(),
+  displayOrder: integer("displayOrder").default(0).notNull(),
 });
 
 export type ProfileSpecialty = typeof profileSpecialties.$inferSelect;
@@ -146,9 +146,9 @@ export type ProfileSpecialty = typeof profileSpecialties.$inferSelect;
  * Reports (flagging inappropriate content)
  */
 export const reports = pgTable("reports", {
-  id: int("id").serial(),
-  reporterUserId: int("reporterUserId"),
-  targetProfileId: int("targetProfileId").notNull(),
+  id: integer("id").serial(),
+  reporterUserId: integer("reporterUserId"),
+  targetProfileId: integer("targetProfileId").notNull(),
   reason: varchar("reason", { length: 50 }).notNull(),
   description: text("description"),
   status: pgEnum("status", ["pending", "reviewed", "resolved", "dismissed"]).default("pending").notNull(),
