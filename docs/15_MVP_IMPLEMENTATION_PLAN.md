@@ -117,12 +117,13 @@
 
 ## M2: DB/RLS/Storage (2026-07-19 ~ 2026-07-21)
 
-**목표**: 11개 핵심 테이블 생성, RLS 정책 5개 구현, Storage 정책 적용
+**목표**: 10개 MVP P0 핵심 테이블 생성, RLS 정책 5개 구현, Storage 정책 적용
 
 ### 작업 범위
 
-1. **핵심 테이블 생성** (Supabase SQL Editor)
+1. **MVP P0 핵심 테이블 생성** (Supabase SQL Editor, 10개)
    ```
+   - auth.users (Supabase Auth, 기본)
    - profiles (is_public, verification_status)
    - workplaces (latitude, longitude)
    - licenses (document_url_private, license_number_encrypted)
@@ -132,8 +133,13 @@
    - profile_specialties (N:M)
    - admin_users (권한)
    - admin_actions (검토 기록)
-   - share_events (Optional, Phase 2)
-   - contact_click_events (Optional, Phase 2)
+   ```
+
+2. **Later 테이블 (P1+, MVP에서 생성하지 않음)**
+   ```
+   - share_events (공유 기록, P1)
+   - contact_click_events (클릭 추적, P1)
+   - reports (신고 기능, P2)
    ```
 
 2. **RLS 정책 5개 구현**
@@ -165,10 +171,10 @@
 - M1 (Supabase 프로젝트 준비)
 
 ### 완료 조건
-- ✅ 11개 테이블 생성 및 스키마 검증
+- ✅ 10개 MVP P0 테이블 생성 및 스키마 검증
 - ✅ RLS 정책 5개 적용 및 테스트
 - ✅ Storage 정책 적용
-- ✅ 마스터 데이터 (specialties) 등록
+- ✅ 마스터 데이터 (specialties, 12개 카테고리 + 세부 태그) 등록
 - ✅ migration 파일 버전 관리 (git 추적)
 
 ### 테스트 항목
@@ -187,10 +193,10 @@
 
 ### CTO 승인 게이트
 **M3 진행 조건**:
-- [ ] 11개 테이블 생성 완료
+- [ ] 10개 MVP P0 테이블 생성 완료
 - [ ] RLS 정책 5개 적용 확인
 - [ ] Storage 정책 적용 확인
-- [ ] 마스터 데이터 등록 완료
+- [ ] 마스터 데이터 (specialties, 12개 카테고리) 등록 완료
 
 ### 남은 리스크
 - 테이블 설계 오류 → 초기 단계에서 발견 및 수정
@@ -415,9 +421,10 @@
    - PATCH /api/admin/licenses/[id]/approve
    - PATCH /api/admin/licenses/[id]/reject
 
-5. **알림 시스템** (Optional, Phase 2)
-   - 승인/반려 후 전문가에게 이메일 발송
-   - (M5에서는 구현 스킵, Phase 2에서)
+5. **알림 시스템** (P1, Phase 2로 이동)
+   - MVP: 마이페이지에서 상태 표시만 (검증 대기 중, 승인됨, 반려됨)
+   - P1: 이메일/푸시 자동 알림 추가 (관리자 결정 후)
+   - (M5에서는 상태 표시만 구현)
 
 ### 변경 예정 파일
 - `app/(admin)/admin/page.tsx` (신규)
@@ -438,8 +445,9 @@
 - ✅ 관리자만 /admin 접근 가능 (RLS + middleware)
 - ✅ 검토 대기 목록 표시
 - ✅ 증빙파일 다운로드 가능 (signed URL)
-- ✅ 승인 시: is_public=true, admin_actions 기록
-- ✅ 반려 시: 사유 저장, admin_actions 기록
+- ✅ 승인 시: is_public=true, admin_actions 기록, 마이페이지 상태 표시
+- ✅ 반려 시: 사유 저장, admin_actions 기록, 마이페이지 반려 사유 표시
+- ✅ (MVP) 전문가는 마이페이지에서만 상태 확인 (이메일 알림은 P1)
 
 ### 테스트 항목
 - [ ] 관리자 로그인: admin_users 확인
@@ -486,9 +494,10 @@
    - 카카오톡 공유 (Kakao JavaScript SDK)
    - (DM, 문자는 기본 공유 기능 사용)
 
-3. **공유 측정** (Optional, Phase 2로 이동 가능)
-   - share_events 테이블에 기록 (user_id, profile_id, platform, timestamp)
-   - 단, M6에서는 구현 스킵 가능 (Phase 2에서)
+3. **공유 측정** (P1, Phase 2로 이동)
+   - MVP: 공유 버튼만 (측정하지 않음)
+   - P1: share_events 테이블에 기록 (user_id, profile_id, platform, timestamp)
+   - (M6에서는 구현 스킵, Phase 2에서 추가)
 
 4. **링크 복사 성공 확인**
    - 클립보드 복사 API 사용
@@ -509,14 +518,15 @@
 - ✅ 동적 OG 메타데이터 생성 (프로필별)
 - ✅ 카카오톡에서 미리보기 표시 (테스트 필수)
 - ✅ 링크 복사 버튼 작동
-- ✅ (Optional) share_events 측정 시작
+- ✅ (MVP) 공유 버튼만 구현, 측정하지 않음
+- ✅ (P1) share_events 테이블은 Phase 2에서 추가
 
 ### 테스트 항목
 - [ ] OG 메타데이터: og:title, og:description, og:image 포함
 - [ ] 카카오톡 공유: 미리보기 정상 표시
 - [ ] 링크 복사: 클립보드 복사 확인 + 토스트 메시지
 - [ ] 동적 OG: 프로필별로 다른 미리보기
-- [ ] (Optional) share_events: 공유 기록 저장
+- [ ] (P1에서) share_events: 공유 기록 저장 (Phase 2에서 추가)
 
 ### 보안 확인
 - ✅ OG 이미지 공개 프로필만 (비공개 프로필 미노출)
@@ -596,8 +606,8 @@
 - M1 ~ M6 (모든 기능)
 
 ### 완료 조건
-- ✅ 모든 21개 Must 기능 정상 작동
-- ✅ 공개 전문가 30명 이상 등록 및 검증
+- ✅ 모든 20개 Must 기능 정상 작동
+- ✅ 공개 전문가 확보 (목표: 30명, 최소: 품질 우선 기준 충족)
 - ✅ Lighthouse 점수 90+ (각 카테고리)
 - ✅ 모바일 사용성 확보 (터치 영역 44px+)
 - ✅ 보안 감사 통과 (RLS, 비공개 데이터 보호)
@@ -606,7 +616,8 @@
 
 ### 테스트 항목
 - [ ] 전체 흐름: 비로그인 조회 ~ 전문가 가입 ~ 관리자 승인 ~ 공유
-- [ ] 기능: 21개 Must 기능 모두 테스트
+- [ ] 기능: 20개 Must 기능 모두 테스트
+- [ ] 필터: 지역 필터, 전문분야 필터 (Later 제외: 직군, 경력, 거리 정렬)
 - [ ] 성능: Lighthouse 90+
 - [ ] 보안: RLS 정책 검증, 비공개 데이터 침투 테스트
 - [ ] 모바일: 360px ~ 768px 렌더링 확인
